@@ -7,25 +7,55 @@ const emitter = new EventEmitter();
 
 
 export default function () {
-  const socket = new WebSocket('ws://localhost:3210');
+  const socket = new WebSocket('ws://localhost:8080/signal');
 
   socket.onclose = () => console.log('Socket closed');
   socket.onerror = err => { console.log('Socket error'); console.log(err); };
   socket.onopen = () => console.log('Connected');
 
-  socket.onmessage = (event) => {
-    const body = JSON.parse(event.data);
-    const { action, data } = body;
+  socket.onmessage = (message) => {
+    const parsedMessaged = JSON.parse(message.data);
+    console.log("received")
+    console.log(parsedMessaged)
+
+    const { action, body } = parsedMessaged;
+    const { data } = body;
+
 
     switch (action) {
       case "DISCOVER": {
+        const rtc = new SimplePeer({ initiator: false, trickle: false });
+        rtc.signal(data);
 
+        const { sender } = body;
+        rtc.on('signal', (data) => socket.send(JSON.stringify({
+          action: "DISCOVER-RESPONSE",
+          body: {
+            data,
+            recipient: sender,
+          }
+        })));
+
+        rtc.on('connect', () => {
+          peers.push(rtc);
+        });
+
+        // rtc.on('data', (data) => {
+        //   const msg = JSON.parse(data);
+        //   emitter.emit('message', msg);
+        // });
 
         break;
       }
 
       case "DISCOVER-RESPONSE": {
-        emitter.emit("DISCOVER-RESPONSE", data);
+        if (parsedMessaged.status !== "error") {
+          console.log("resp")
+          console.log(emitter.emit("DISCOVER-RESPONSE", data));
+        } else {
+          console.error(data)
+        }
+
 
         break;
       }
@@ -33,24 +63,6 @@ export default function () {
       default:
         break;
     }
-
-
-    const rtc = new SimplePeer({ initiator: false, trickle: false });
-
-    rtc.signal(data);
-
-    rtc.on('signal', (data) => {
-      socket.send(JSON.stringify(data));
-    });
-
-    rtc.on('connect', () => {
-      peers.push(rtc);
-    });
-
-    rtc.on('data', (data) => {
-      const msg = JSON.parse(data);
-      emitter.emit('message', msg);
-    });
   };
 
   return {
@@ -72,21 +84,28 @@ export default function () {
       const peer = new SimplePeer({ initiator: true, trickle: false });
 
       peer.on('signal', (data) => {
-        socket.send({
+        socket.send(JSON.stringify({
           action: "DISCOVER",
           body: {
-            peer: peerName,
-            data: JSON.stringify(data),
+            recipient: peerName,
+            data,
           }
-        });
+        }));
       });
 
-      emitter.on("DISCOVER-RESPONSE", (data) => {
-        peer.signal(JSON.parse(data));
-      });
+      const callback = (signalData) => {
+        console.log(signalData)
+        console.log("peer signal")
 
+        peer.signal(signalData);
 
-      return peer;
+        resolve(peer);
+
+        emitter.removeListener("DISCOVER-RESPONSE", callback);
+      };
+
+      console.log("setting listener")
+      console.log(emitter.on("DISCOVER-RESPONSE", callback));
     }),
   };
 };
