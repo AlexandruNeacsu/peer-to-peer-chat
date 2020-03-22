@@ -1,26 +1,25 @@
-'use strict';
-
 const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
 const WebSocket = require('ws');
 const http = require('http');
 
+const passport = require("./modules/passport");
+const { User } = require("./modules/sequelize");
 
-var expressWs = require('express-ws');
 
 const app = express();
-expressWs(app);
 
-const map = new Map();
+const socketMap = new Map();
 
-
-const SECRET = 'Secret-Discreet#45$';
 
 const sessionParser = session({
-  saveUninitialized: false,
-  secret: SECRET, // TODO
-  resave: false
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    httpOnly: true,
+  },
 });
 
 const corsOptions = {
@@ -30,40 +29,63 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(sessionParser);
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.json());
 
-app.post('/login', function (req, res) {
-  const userId = req.body.username;
-
-  if (req.session.userId) {
-    console.log(`userId ${userId} already set`);
-    res.send({ result: 'OK', message: 'Session updated' });
+app.post("/login", passport.authenticate("local"), (req, res) => {
+  if (req.body.remember) {
+    res.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+    req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+  } else {
+    res.cookie.expires = false;
+    req.session.cookie.expires = false;
   }
-  else if (map.has(userId)) {
-    res.status(401).json({ message: "Login failed, bad credentials!" });
-  }
-  else {
-    console.log(`Updating session for user ${userId}`);
 
-    req.session.userId = userId;
-    req.session.save();
+  res.status(202).json({ message: "ok" });
+});
 
-    console.log(req.session)
+app.post("/signup", async (req, res) => {
+  try {
+    // FIXME check if body has exactly the required fields so we don't get hacked!
+    // if (Object.values(req.body) !==) {
 
-    res.send({ result: 'OK', message: 'Session updated' });
+    // }
+
+    if (!req.body.username) {
+      res.status(406).json({ message: "missing username" });
+    } else if (!req.body.email) {
+      res.status(406).json({ message: "missing email" });
+    } else if (!req.body.password) {
+      res.status(406).json({ message: "missing password" });
+    } else {
+      await User.create(req.body);
+
+      res.status(201).json({ message: "user created" });
+    }
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({ message: "server error" });
   }
 });
 
-app.delete('/logout', function (request, response) {
-  console.log('Destroying session');
-  const { webSocket } = request.session;
+app.delete("/logout", (req, res) => {
+  res.cookie.expires = false;
+  req.session.cookie.expires = false;
 
-  request.session.destroy(() => {
-    console.log('destroyed')
-    if (webSocket) webSocket.close();
+  const { id } = req.user;
 
-    response.send({ result: 'OK', message: 'Session destroyed' });
-  });
+  if (socketMap.has(id)) {
+    const webSocket = socketMap.get(id);
+
+    webSocket.close();
+
+    socketMap.delete(id);
+  }
+
+  req.logout();
+  res.redirect("/");
 });
 
 
@@ -74,8 +96,10 @@ server.on('upgrade', function (request, socket, head) {
   console.log('Parsing session from request...');
 
   sessionParser(request, {}, () => {
-    if (!request.session.userId) {
+    console.log(request.session)
+    if (!request.user) {
       console.log("session not found!");
+
       socket.destroy();
       return;
     }
@@ -89,75 +113,77 @@ server.on('upgrade', function (request, socket, head) {
 });
 
 wss.on('connection', function (ws, request) {
+  console.log(request.user);
   console.log(request.session)
-  const userId = request.session.userId;
 
-  map.set(userId, ws);
+  // const { id } = request.user;
 
-  ws.on('message', (msg) => {
-    const parsedMessage = JSON.parse(msg);
-    console.log(`Received message from user ${userId}`);
+  // socketMap.set(id, ws);
 
-    switch (parsedMessage.action) {
-      case "DISCOVER": {
-        const { recipient } = parsedMessage.body;
+  // ws.on('message', (msg) => {
+  //   const parsedMessage = JSON.parse(msg);
+  //   console.log(`Received message from user ${id}`);
 
-        if (!map.has(recipient)) {
-          ws.send({ status: "error", message: "Coudn't find recipient!" });
-        } else {
-          const { data } = parsedMessage.body;
+  //   switch (parsedMessage.action) {
+  //     case "DISCOVER": {
+  //       const { recipient } = parsedMessage.body;
 
-          const message = JSON.stringify({
-            action: "DISCOVER",
-            status: "OK",
-            body: {
-              sender: request.session.userId,
-              data,
-            }
-          });
+  //       if (!map.has(recipient)) {
+  //         ws.send({ status: "error", message: "Coudn't find recipient!" });
+  //       } else {
+  //         const { data } = parsedMessage.body;
 
-          const socket = map.get(recipient);
+  //         const message = JSON.stringify({
+  //           action: "DISCOVER",
+  //           status: "OK",
+  //           body: {
+  //             sender: request.session.id,
+  //             data,
+  //           }
+  //         });
 
-          console.log(`Sending message to user  ${recipient}`)
-          socket.send(message);
-        }
+  //         const socket = map.get(recipient);
 
-        break;
-      }
+  //         console.log(`Sending message to user  ${recipient}`)
+  //         socket.send(message);
+  //       }
 
-      case "DISCOVER-RESPONSE": {
-        const { recipient } = parsedMessage.body;
+  //       break;
+  //     }
 
-        if (!map.has(recipient)) {
-          ws.send({ status: "error", message: "Coudn't find recipient!" });
-        } else {
-          const { data } = parsedMessage.body;
+  //     case "DISCOVER-RESPONSE": {
+  //       const { recipient } = parsedMessage.body;
 
-          const message = JSON.stringify({
-            action: "DISCOVER-RESPONSE",
-            status: "OK",
-            body: {
-              sender: request.session.userId,
-              data,
-            }
-          });
+  //       if (!map.has(recipient)) {
+  //         ws.send({ status: "error", message: "Coudn't find recipient!" });
+  //       } else {
+  //         const { data } = parsedMessage.body;
 
-          const socket = map.get(recipient);
+  //         const message = JSON.stringify({
+  //           action: "DISCOVER-RESPONSE",
+  //           status: "OK",
+  //           body: {
+  //             sender: request.session.id,
+  //             data,
+  //           }
+  //         });
 
-          console.log(`Sending message to user  ${recipient}`)
-          socket.send(message);
-        }
+  //         const socket = map.get(recipient);
 
-        break;
-      }
+  //         console.log(`Sending message to user  ${recipient}`)
+  //         socket.send(message);
+  //       }
 
-      default:
-        break;
-    }
-  });
+  //       break;
+  //     }
+
+  //     default:
+  //       break;
+  //   }
+  // });
 
   ws.on('close', function () {
-    map.delete(userId);
+    socketMap.delete(userId);
   });
 });
 
@@ -168,53 +194,3 @@ server.listen(8080, function () {
   console.log('Listening on http://localhost:8080');
 });
 
-
-// app.ws("/signal", (ws, request) => {
-//   console.log("ws")
-//   console.log(request.headers.cookie)
-
-//   sessionParser(request, {}, () => console.log(request.session))
-
-//   const userId = request.session.userId;
-
-//   map.set(userId, ws);
-
-//   ws.on('message', (msg) => {
-//     const parsedMessage = JSON.parse(msg);
-//     console.log(`Received message from user ${userId}`);
-//     // console.log(parsedMessage)
-
-//     switch (parsedMessage.action) {
-//       case "DISCOVER":
-//         const { peer } = parsedMessage.body;
-
-//         if (!map.has(peer)) {
-//           ws.send({ status: "error", message: "Coudn't find peer!" });
-//         } else {
-//           const { data } = parsedMessage.body;
-
-//           const message = JSON.stringify({
-//             action: "DISCOVER",
-//             body: {
-//               data,
-//             }
-//           });
-
-//           // console.log(message)
-
-//           ws.send(message);
-//         }
-
-//         break;
-
-//       default:
-//         break;
-//     }
-//   });
-
-//   ws.on('close', function () {
-//     map.delete(userId);
-//   });
-// });
-
-// app.listen(8080, () => console.log("listening"))

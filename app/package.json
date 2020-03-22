@@ -10,10 +10,15 @@
     "@testing-library/react": "^9.4.1",
     "@testing-library/user-event": "^7.2.1",
     "axios": "^0.19.2",
+    "formik": "^2.1.4",
+    "moment": "^2.24.0",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
+    "react-i18nify": "^3.1.3",
+    "react-router-dom": "^5.1.2",
     "react-scripts": "3.4.0",
-    "simple-peer": "^9.6.2"
+    "simple-peer": "^9.6.2",
+    "yup": "^0.28.3"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -22,7 +27,23 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": "react-app"
+    "extends": [
+      "react-app",
+      "airbnb"
+    ],
+    "rules": {
+      "quotes": [
+        "error",
+        "double"
+      ],
+      "react/require-default-props": 0,
+      "react/jsx-props-no-spreading": 0,
+      "linebreak-style": 0,
+      "arrow-parens": 0,
+      "react/prop-types": 0,
+      "react/state-in-constructor": 0,
+      "object-curly-newline": 0
+    }
   },
   "browserslist": {
     "production": [
@@ -35,5 +56,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "devDependencies": {
+    "eslint-config-airbnb": "^18.1.0",
+    "eslint-plugin-react-hooks": "^2.5.0"
+  },
+  "proxy": "http://localhost:8080"
 }

@@ -11,6 +11,7 @@ import MailIcon from '@material-ui/icons/Mail';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from '@material-ui/core/TextField';
 import { ListSubheader } from '@material-ui/core';
+import ContactList from './ContactList';
 
 
 const drawerWidth = 240;
@@ -26,7 +27,7 @@ const useStyles = makeStyles(theme => ({
   toolbar: theme.mixins.toolbar,
 }));
 
-export default function ContactList() {
+export default function Sidebar() {
   const classes = useStyles();
 
   return (
@@ -40,8 +41,9 @@ export default function ContactList() {
     >
       <ListItem button>
         <ListItemIcon> <InboxIcon /></ListItemIcon>
-        <ListItemText primary={"Asfafs"} />
+        <ListItemText primary={"Add friend"} />
       </ListItem>
+
       {/* TODO incarca optiuni dupa ce user a scris cateva litere...  */}
       <Autocomplete
         id="free-solo-demo"
@@ -51,20 +53,12 @@ export default function ContactList() {
           <TextField {...params} label="freeSolo" margin="normal" variant="outlined" />
         )}
       />
+
       {/* <div className={classes.toolbar} /> */}
       <Divider />
 
-      <List>
-        <ListSubheader>{`Friends`}</ListSubheader>
-        {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
-          <>
-            <ListItem button key={text}>
-              <ListItemIcon>{index % 2 === 0 ? <InboxIcon /> : <MailIcon />}</ListItemIcon>
-              <ListItemText primary={text} />
-            </ListItem>
-          </>
-        ))}
-      </List>
-    </Drawer>
+      <ContactList />
+
+    </Drawer >
   );
 }
