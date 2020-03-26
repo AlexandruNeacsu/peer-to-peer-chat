@@ -4,8 +4,11 @@ import Register from "./Register";
 import Login from "./Login";
 
 export default class index extends Component {
-  handleLoginSubmit = async () => {
+  handleLoginSubmit = async (username) => {
     const { history, onSucces } = this.props;
+
+    localStorage.clear();
+    localStorage.setItem("username", username);
 
     await onSucces();
     history.replace("/");

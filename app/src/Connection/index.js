@@ -6,17 +6,16 @@ const peers = [];
 const emitter = new EventEmitter();
 
 
-export default function () {
-  const socket = new WebSocket('ws://localhost:8080/signal');
+export default () => new Promise((resolve, reject) => {
+  const socket = new WebSocket("ws://localhost:8080/signal");
 
-  socket.onclose = () => console.log('Socket closed');
-  socket.onerror = err => { console.log('Socket error'); console.log(err); };
-  socket.onopen = () => console.log('Connected');
+  socket.onerror = (error) => reject(error);
+  socket.onclose = (event) => console.log("Socket closed") || console.log(event); // TODO: debuging only!
 
   socket.onmessage = (message) => {
     const parsedMessaged = JSON.parse(message.data);
-    console.log("received")
-    console.log(parsedMessaged)
+    console.log("received");
+    console.log(parsedMessaged);
 
     const { action, body } = parsedMessaged;
     const { data } = body;
@@ -28,15 +27,15 @@ export default function () {
         rtc.signal(data);
 
         const { sender } = body;
-        rtc.on('signal', (data) => socket.send(JSON.stringify({
+        rtc.on("signal", (data) => socket.send(JSON.stringify({
           action: "DISCOVER-RESPONSE",
           body: {
             data,
             recipient: sender,
-          }
+          },
         })));
 
-        rtc.on('connect', () => {
+        rtc.on("connect", () => {
           peers.push(rtc);
         });
 
@@ -50,10 +49,10 @@ export default function () {
 
       case "DISCOVER-RESPONSE": {
         if (parsedMessaged.status !== "error") {
-          console.log("resp")
+          console.log("resp");
           console.log(emitter.emit("DISCOVER-RESPONSE", data));
         } else {
-          console.error(data)
+          console.error(data);
         }
 
 
@@ -65,10 +64,11 @@ export default function () {
     }
   };
 
-  return {
+  // return an interface
+  socket.onopen = () => resolve({
     onReady: (callback) => {
-      //the host is always "ready" although it may
-      //not have any clients
+      // the host is always "ready" although it may
+      // not have any clients
       callback();
     },
 
@@ -77,25 +77,25 @@ export default function () {
     },
 
     onMessage: (callback) => {
-      emitter.on('message', callback);
+      emitter.on("message", callback);
     },
 
     findPeer: (peerName) => new Promise((resolve, reject) => {
       const peer = new SimplePeer({ initiator: true, trickle: false });
 
-      peer.on('signal', (data) => {
+      peer.on("signal", (data) => {
         socket.send(JSON.stringify({
           action: "DISCOVER",
           body: {
             recipient: peerName,
             data,
-          }
+          },
         }));
       });
 
       const callback = (signalData) => {
-        console.log(signalData)
-        console.log("peer signal")
+        console.log(signalData);
+        console.log("peer signal");
 
         peer.signal(signalData);
 
@@ -104,8 +104,8 @@ export default function () {
         emitter.removeListener("DISCOVER-RESPONSE", callback);
       };
 
-      console.log("setting listener")
+      console.log("setting listener");
       console.log(emitter.on("DISCOVER-RESPONSE", callback));
     }),
-  };
-};
+  });
+});

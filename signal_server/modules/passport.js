@@ -11,16 +11,16 @@ passport.use(
   "local",
   new LocalStrategy(
     {
-      usernameField: "email",
+      usernameField: "username",
       passwordField: "password",
     },
-    async (email, pass, done) => {
-      if (email && pass) {
-        const user = await getUser({ email });
+    async (username, pass, done) => {
+      if (username && pass) {
+        const user = await getUser({ username });
 
         if (!user) {
           return done(null, false, {
-            message: "Incorrect email.",
+            message: "Incorrect username.",
           });
         }
 

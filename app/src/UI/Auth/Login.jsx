@@ -46,9 +46,10 @@ class Login extends Component {
 
 
   handleSubmit = async (user) => {
-    const { email, password, remember } = user;
+    const { username, password, remember } = user;
+
     try {
-      const response = await axios.post("/login", { email, password, remember });
+      const response = await axios.post("/login", { username, password, remember });
 
       if (response.status === 202) {
         this.setState({
@@ -59,7 +60,7 @@ class Login extends Component {
 
         const { handleLoginSubmit } = this.props;
 
-        handleLoginSubmit();
+        handleLoginSubmit(username);
       }
     } catch (error) {
       this.setState({
@@ -86,12 +87,12 @@ class Login extends Component {
         />
         <Formik
           initialValues={{
-            email: "",
+            username: "",
             password: "",
             remember: false,
           }}
           validationSchema={Yup.object({
-            email: Yup.string().required("Required").email(t("Auth.Errors.Email")),
+            username: Yup.string().required("Required").min(5, t("Auth.Errors.UsernameLength")).max(50, t("Auth.Errors.UsernameLength")),
             password: Yup.string(),
             remember: Yup.bool(),
           })}
@@ -113,8 +114,8 @@ class Login extends Component {
                 <FormikTextField
                   margin="normal"
                   fullWidth
-                  label={t("Auth.Email")}
-                  name="email"
+                  label={t("Auth.Username")}
+                  name="username"
                 />
                 <FormikTextField
                   margin="normal"

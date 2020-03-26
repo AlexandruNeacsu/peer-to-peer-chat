@@ -45,10 +45,10 @@ class Register extends Component {
 
 
   handleSubmit = async (user) => {
-    const { username, email, password } = user;
+    const { username, password } = user;
 
     try {
-      const response = await axios.post("/signup", { username, email, password });
+      const response = await axios.post("/signup", { username, password });
 
       if (response.status === 201) {
         this.setState({
@@ -86,15 +86,13 @@ class Register extends Component {
         <Formik
           initialValues={{
             username: "",
-            email: "",
             password: "",
             confirmPassword: "",
           }}
           validationSchema={Yup.object({
-            username: Yup.string().required("Required").min(5, t("Auth.UsernameLength")).max(20),
-            email: Yup.string().required("Required").email(t("Auth.InvalidEmail")),
-            password: Yup.string().required("Required").min(5, t("Auth.PasswordLength")),
-            confirmPassword: Yup.string().required("Required").min(5, t("Auth.PasswordLength")).oneOf([Yup.ref("password")], t("Auth.MatchPassword")),
+            username: Yup.string().required("Required").min(5, t("Auth.Errors.UsernameLength")).max(50, t("Auth.Errors.UsernameLength")),
+            password: Yup.string().required("Required").min(5, t("Auth.Errors.PasswordLength")),
+            confirmPassword: Yup.string().required("Required").min(5, t("Auth.Errors.PasswordLength")).oneOf([Yup.ref("password")], t("Auth.MatchPassword")),
           })}
           onSubmit={async (user, { setSubmitting }) => {
             await this.handleSubmit(user);
@@ -120,14 +118,6 @@ class Register extends Component {
                       label={t("Auth.Username")}
                       name="username"
                       autoComplete="username"
-                    />
-                  </Grid>
-                  <Grid item xs={12} className={classes.item}>
-                    <FormikTextField
-                      margin="normal"
-                      label="Email"
-                      name="email"
-                      autoComplete="email"
                     />
                   </Grid>
                   <Grid item xs={12} className={classes.item}>

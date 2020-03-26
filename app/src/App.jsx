@@ -48,6 +48,12 @@ function App() {
   const [peers, setPeers] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  const handleLogout = () => {
+    localStorage.clear();
+
+    setIsAuthenticated(false);
+  };
+
 
   // TODO move these to custom hooks
 
@@ -61,12 +67,12 @@ function App() {
 
           switch (status) {
             case 401:
-              setIsAuthenticated(false);
+              handleLogout();
               break;
 
             case 403:
               if (data.msg === "no access") {
-                setIsAuthenticated(false);
+                handleLogout();
               }
 
               break;
@@ -84,31 +90,38 @@ function App() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const username = window.prompt("nume", "alex");
-        console.log(username);
+        const a = await Connection((err, socket) => {
+          console.log("Socket error");
+          console.log(err);
 
-        const a = Connection();
+          console.log(socket);
+        });
 
-        setIsAuthenticated(true);
-
-        if (username === "lavi") {
-          const peer = await a.findPeer("alex");
-
-          console.log(peer)
-        }
+        // setIsAuthenticated(true);
+        //
+        // if (localStorage.getItem("username") === "lavi") {
+        //   const peer = await a.findPeer("alex");
+        //
+        //   console.log(peer);
+        // }
       } catch (error) {
-        console.error(error.message)
+        if (error instanceof CloseEvent && error.code === 100) {
+          // user is not logged in
+          handleLogout();
+        } else {
+          console.error(error.message);
+        }
       }
     }
 
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleSucces = () => setIsAuthenticated(true);
 
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
+      <CssBaseline/>
 
       <div className={classes.app}>
 
@@ -117,16 +130,23 @@ function App() {
           {
             isAuthenticated ? (
               <Switch>
-                <Route exact path="/" render={routerProps => (<Dashboard {...routerProps} />)} />
-                <Route path="*" exact component={NotFound404} />
+                <Route exact path="/" render={routerProps => (<Dashboard {...routerProps} />)}/>
+                <Route
+                  exact
+                  path={["/login", "/register"]}
+                  render={routerProps => (<Redirect {...routerProps} to="/"/>)}
+                />
+                <Route path="*" exact component={NotFound404}/>
+              </Switch>
+            ) : (
+              <Switch>
+                <Route
+                  path={["/login", "/register"]}
+                  render={routerProps => (<Auth {...routerProps} onSucces={handleSucces}/>)}
+                />
+                <Route path="*" render={() => <Redirect to="login"/>}/>
               </Switch>
             )
-              : (
-                <Switch>
-                  <Route path={["/login", "/register"]} render={routerProps => (<Auth {...routerProps} onSucces={handleSucces} />)} />
-                  <Route path="*" render={() => <Redirect to="login" />} />
-                </Switch>
-              )
           }
         </Router>
       </div>

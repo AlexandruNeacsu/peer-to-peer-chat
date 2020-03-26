@@ -34,9 +34,10 @@
     "LoginMessage": "Nu ai cont? Înregistrează-te",
     "Remember": "Ține-mă minte",
     "Forgot": "Ai uitat parola?",
-    "MatchPassword": "Parola nu este aceeași!",
-    "PasswordLength": "Parola trebuie sa aiba cel putin 5 caractere",
     "Errors": {
+      "UsernameLength": "Numele de utilizator trebuie sa aiba intre 5 si 50 de caractere!",
+      "PasswordLength": "Parola trebuie sa aiba cel putin 5 caractere",
+      "MatchPassword": "Parola nu este aceeași!",
       "Email": "Valoarea introdusă nu este o adresă validă de email!"
     }
   },

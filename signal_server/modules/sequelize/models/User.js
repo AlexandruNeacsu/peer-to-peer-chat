@@ -11,7 +11,7 @@ module.exports = (sequelize, type) => {
         primaryKey: true,
         validate: {
           len: (value) => {
-            if (value.length <= 5) {
+            if (value.length < 5) {
               throw Error("Username length must be bigger than 5");
             }
           },

@@ -42,6 +42,9 @@ app.post("/login", passport.authenticate("local"), (req, res) => {
     req.session.cookie.expires = false;
   }
 
+  console.log("login")
+  console.log(req.session)
+
   res.status(202).json({ message: "ok" });
 });
 
@@ -54,8 +57,8 @@ app.post("/signup", async (req, res) => {
 
     if (!req.body.username) {
       res.status(406).json({ message: "missing username" });
-    } else if (!req.body.email) {
-      res.status(406).json({ message: "missing email" });
+      // } else if (!req.body.email) {
+      //   res.status(406).json({ message: "missing email" });
     } else if (!req.body.password) {
       res.status(406).json({ message: "missing password" });
     } else {
@@ -96,25 +99,30 @@ server.on('upgrade', function (request, socket, head) {
   console.log('Parsing session from request...');
 
   sessionParser(request, {}, () => {
-    console.log(request.session)
-    if (!request.user) {
+    if (!request.session || !request.session.passport || !request.session.passport.user) {
       console.log("session not found!");
 
+      // TODO send a message to show in the request panel as failed, ex:
+      // const SOCKET_NOT_AUTHENICATED_CODE = 4001;
+      // const SOCKET_NOT_AUTHENICATED_MESSAGE = 'HTTP/1.1 401 Web Socket Protocol Handshake\r\n' +
+      //   'Upgrade: WebSocket\r\n' +
+      //   'Connection: Upgrade\r\n' +
+      //   '\r\n';
+
       socket.destroy();
-      return;
+    } else {
+      console.log('Session is parsed!');
+
+      wss.handleUpgrade(request, socket, head, function (ws) {
+        wss.emit('connection', ws, request);
+      });
     }
-
-    console.log('Session is parsed!');
-
-    wss.handleUpgrade(request, socket, head, function (ws) {
-      wss.emit('connection', ws, request);
-    });
   });
 });
 
 wss.on('connection', function (ws, request) {
   console.log(request.user);
-  console.log(request.session)
+  console.log(request.session);
 
   // const { id } = request.user;
 
