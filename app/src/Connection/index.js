@@ -1,6 +1,6 @@
 import SimplePeer from "simple-peer";
 import EventEmitter from "events";
-
+import ServerConnectionError from "./Errors/ServerConnectionError";
 
 const peers = [];
 const emitter = new EventEmitter();
@@ -9,8 +9,15 @@ const emitter = new EventEmitter();
 export default () => new Promise((resolve, reject) => {
   const socket = new WebSocket("ws://localhost:8080/signal");
 
-  socket.onerror = (error) => reject(error);
-  socket.onclose = (event) => console.log("Socket closed") || console.log(event); // TODO: debuging only!
+  socket.onclose = (event) => emitter.emit("close", event);
+  socket.onerror = (error) => {
+    if (socket.readyState === socket.CONNECTING) {
+      reject(new ServerConnectionError("Couldn't connect to server.", error));
+      // TODO handle other errors by checking readyState
+    } else {
+      reject(error);
+    }
+  };
 
   socket.onmessage = (message) => {
     const parsedMessaged = JSON.parse(message.data);
@@ -23,6 +30,7 @@ export default () => new Promise((resolve, reject) => {
 
     switch (action) {
       case "DISCOVER": {
+        // TODO: ask user if he wants to accept
         const rtc = new SimplePeer({ initiator: false, trickle: false });
         rtc.signal(data);
 
@@ -66,19 +74,13 @@ export default () => new Promise((resolve, reject) => {
 
   // return an interface
   socket.onopen = () => resolve({
-    onReady: (callback) => {
-      // the host is always "ready" although it may
-      // not have any clients
-      callback();
-    },
+    // send: (peer, message) => {
+    //   peer.send(JSON.stringify(message));
+    // },
 
-    send: (peer, message) => {
-      peer.send(JSON.stringify(message));
-    },
-
-    onMessage: (callback) => {
-      emitter.on("message", callback);
-    },
+    // onMessage: (callback) => {
+    //   emitter.on("message", callback);
+    // },
 
     findPeer: (peerName) => new Promise((resolve, reject) => {
       const peer = new SimplePeer({ initiator: true, trickle: false });
@@ -106,6 +108,16 @@ export default () => new Promise((resolve, reject) => {
 
       console.log("setting listener");
       console.log(emitter.on("DISCOVER-RESPONSE", callback));
+    }),
+
+    close: () => new Promise((resolveClose, rejectClose) => {
+      try {
+        socket.close();
+
+        emitter.on("close", (closeEvent) => resolveClose(closeEvent));
+      } catch (e) {
+        rejectClose(e);
+      }
     }),
   });
 });

@@ -3,10 +3,10 @@ import axios from "axios";
 import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-dom";
 import { createMuiTheme, ThemeProvider, makeStyles } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
-import Connection from "./Connection";
 import Auth from "./UI/Auth";
 import NotFound404 from "./UI/404";
 import Dashboard from "./UI/Dashboard";
+import useSignalSocket from "./Hooks/useSignalSocket";
 
 
 const useStyles = makeStyles(theme => ({
@@ -48,12 +48,12 @@ function App() {
   const [peers, setPeers] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const handleLogout = () => {
+
+  function handleLogout() {
     localStorage.clear();
 
     setIsAuthenticated(false);
-  };
-
+  }
 
   // TODO move these to custom hooks
 
@@ -86,36 +86,7 @@ function App() {
     );
   }, []);
 
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const a = await Connection((err, socket) => {
-          console.log("Socket error");
-          console.log(err);
-
-          console.log(socket);
-        });
-
-        // setIsAuthenticated(true);
-        //
-        // if (localStorage.getItem("username") === "lavi") {
-        //   const peer = await a.findPeer("alex");
-        //
-        //   console.log(peer);
-        // }
-      } catch (error) {
-        if (error instanceof CloseEvent && error.code === 100) {
-          // user is not logged in
-          handleLogout();
-        } else {
-          console.error(error.message);
-        }
-      }
-    }
-
-    fetchData();
-  }, [isAuthenticated]);
+  const signalSocket = useSignalSocket(isAuthenticated, handleLogout);
 
   const handleSucces = () => setIsAuthenticated(true);
 

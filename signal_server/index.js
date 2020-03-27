@@ -102,14 +102,9 @@ server.on('upgrade', function (request, socket, head) {
     if (!request.session || !request.session.passport || !request.session.passport.user) {
       console.log("session not found!");
 
-      // TODO send a message to show in the request panel as failed, ex:
-      // const SOCKET_NOT_AUTHENICATED_CODE = 4001;
-      // const SOCKET_NOT_AUTHENICATED_MESSAGE = 'HTTP/1.1 401 Web Socket Protocol Handshake\r\n' +
-      //   'Upgrade: WebSocket\r\n' +
-      //   'Connection: Upgrade\r\n' +
-      //   '\r\n';
+      const SOCKET_NOT_AUTHENICATED_MESSAGE = 'HTTP/1.1 401 Web Socket Protocol Handshake\r\n\r\n';
 
-      socket.destroy();
+      socket.end(SOCKET_NOT_AUTHENICATED_MESSAGE);
     } else {
       console.log('Session is parsed!');
 
