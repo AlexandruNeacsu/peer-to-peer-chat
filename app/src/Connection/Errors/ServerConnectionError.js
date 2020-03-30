@@ -1,10 +1,10 @@
 class ServerConnectionError extends Error {
-  constructor(message, closeEvent) {
+  constructor(message, error) {
     super(message);
 
 
-    this.name = "NotAuthenticatedError";
-    this.closeEvent = closeEvent;
+    this.name = "ServerConnectionError";
+    this.error = error;
   }
 }
 

@@ -1,17 +1,4 @@
 {
-  "Dashboard": {
-    "OpenProjects": "Proiecte in desfasurare",
-    "DeliverablesToBeGraded": "Livrabile de notat",
-    "CompletedProjects": "Proiecte incheiate",
-    "NotGraded": "Nenotat",
-    "Table": {
-      "Title": "Proiectele mele",
-      "Project": "Proiect",
-      "Percentage": "Procentaj",
-      "Grade": "Nota",
-      "Deadline": "Termen"
-    }
-  },
   "Languages": {
     "Romanian": "Romana",
     "English": "Engleza"
@@ -41,74 +28,6 @@
       "Email": "Valoarea introdusă nu este o adresă validă de email!"
     }
   },
-  "Home": {
-    "Title": "Sistem Notare Anonima Garta",
-    "Slogan": "Garta Student Grading System",
-    "UnderS": "Sistem de Notare a Studentilor",
-    "Forgot": "Ai uitat parola?",
-    "UsernameLength": "Numele de utilizator trebuie sa aiba cel putin 5 caractere",
-    "InvalidEmail": "Email invalid",
-    "Student": "Student",
-    "Professor": "Profesor"
-  },
-  "Projects": {
-    "Dashboard": {
-      "Projects": "Proiecte",
-      "Add": "Adauga",
-      "Next": "Inainte",
-      "Back": "Inapoi",
-      "CreatedAt": "Creat la",
-      "UpdatedAt": "Actualizat la",
-      "Deadline": "Termen",
-      "By": "De",
-      "Details": "Detalii",
-      "ProjectsToBeGraded": "Proiecte de notat"
-    },
-    "Add": {
-      "ProjectData": "Date proiect",
-      "ProjectName": "Nume",
-      "ProjectSummary": "Rezumat",
-      "ProjectTeam": "Echipa",
-      "ProjectProfessor": "Profesor",
-      "AddDeliverable": "Adauga livrabil",
-      "Cancel": "Anuleaza",
-      "Submit": "Trimite",
-      "Deliverables": "Livrabile",
-      "Deliverable": {
-        "Edit": "Editare",
-        "Delete": "Sterge",
-        "Name": "Nume",
-        "Description": "Descriere",
-        "Weight": "Pondere",
-        "Deadline": "Termen",
-        "Title": "Livrabil"
-      },
-      "Succes": "Proiectul a fost adaugat cu succes!"
-    },
-    "Details": {
-      "Tabs": {
-        "Overview": "Prezentare generala",
-        "Deliverables": "Livrabile"
-      },
-      "Professor": "Profesor",
-      "NextDeadline": "Urmatorul termen",
-      "TeamMembers": "Membri echipa",
-      "Summary": "Summar",
-      "FinishDeliverable": "Finalizeaza livrabil",
-      "GradeDeliverable": "Noteaza livrabil",
-      "Grade": "Nota",
-      "Sure": "Esti sigur ca vrei sa trimiti?",
-      "Back": "Inapoi"
-    },
-    "Deliverables": {
-      "Overdue": "Depasit"
-    },
-    "Tabs": {
-      "Owned": "Proiectele mele",
-      "ToBeGraded": "De notat",
-      "Projects": "Proiecte"
-    }
-  },
   "Errors": {
     "Required": "Camp necesar",
     "Pozitive": "Numarul introdus trebuie sa fie pozitiv",
@@ -117,36 +36,7 @@
     "Min": "Sunt necesare %{value} %{name}",
     "Max": "Maxim %{value} %{name}",
     "MinDate": "Nu poti selecta o data mai mica decat %{date}",
-    "MaxDate": "Data maxima este %{date}"
-  },
-  "Teams": {
-    "Add": {
-      "NameLength": "Numele echipei ar trebui sa fie intre 5 si 20 de caractere",
-      "Member": "Membru",
-      "Cancel": "Anuleaza",
-      "Submit": "Trimite",
-      "TeamToBeAdded": {
-        "Members": "Membrii",
-        "Name": "Nume",
-        "AddYourTeam": "Adauga-ti echipa"
-      }
-    }
-  },
-  "Team": {
-    "Project": "Proiecte: ",
-    "TeamName": "Nume echipa",
-    "TeamDescription": "Descriere echipa",
-    "Members": "Membrii",
-    "Projects": "Proiecte",
-    "Add": {
-      "Teams": "Echipe",
-      "TeamToBeAdded": {
-        "AddYourTeam": "Adauga echipa"
-      }
-    }
-  },
-  "MaxDate": "Data maxima este %{date}",
-  "SumTo100": "Suma tuturor ponderilor trebuie sa fie 100!",
-  "FetchDataError": "Nu s-au putut incarca datele! Incearca mai tarziu.",
-  "PostProjectError": "Proiectul nu se poate adauga!"
+    "MaxDate": "Data maxima este %{date}",
+    "FetchDataError": "Nu s-au putut incarca datele! Incearca mai tarziu."
+  }
 }

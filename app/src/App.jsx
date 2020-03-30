@@ -46,7 +46,11 @@ function App() {
   const classes = useStyles();
 
   const [peers, setPeers] = useState([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // set initial auth status to true if username is set so we don't do a unnecessary render if he is actually logged in
+  // servers returns 404 if we are not authenticated so this is not a problem if we handle it inside useSignalSocket
+  const username = localStorage.getItem("username");
+  const [isAuthenticated, setIsAuthenticated] = useState(!!username);
 
 
   function handleLogout() {
@@ -55,7 +59,7 @@ function App() {
     setIsAuthenticated(false);
   }
 
-  // TODO move these to custom hooks
+  const handleSuccess = () => setIsAuthenticated(true);
 
   // Detect user logout by checking the server response status and message.
   useEffect(() => {
@@ -86,13 +90,18 @@ function App() {
     );
   }, []);
 
+  // TODO add loader!
   const signalSocket = useSignalSocket(isAuthenticated, handleLogout);
 
-  const handleSucces = () => setIsAuthenticated(true);
+  if (signalSocket && !isAuthenticated) {
+    setIsAuthenticated(true);
+  }
+
+  console.log(isAuthenticated);
 
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline/>
+      <CssBaseline />
 
       <div className={classes.app}>
 
@@ -101,21 +110,21 @@ function App() {
           {
             isAuthenticated ? (
               <Switch>
-                <Route exact path="/" render={routerProps => (<Dashboard {...routerProps} />)}/>
+                <Route exact path="/" render={routerProps => (<Dashboard {...routerProps} />)} />
                 <Route
                   exact
                   path={["/login", "/register"]}
-                  render={routerProps => (<Redirect {...routerProps} to="/"/>)}
+                  render={routerProps => (<Redirect {...routerProps} to="/" />)}
                 />
-                <Route path="*" exact component={NotFound404}/>
+                <Route path="*" exact component={NotFound404} />
               </Switch>
             ) : (
               <Switch>
                 <Route
                   path={["/login", "/register"]}
-                  render={routerProps => (<Auth {...routerProps} onSucces={handleSucces}/>)}
+                  render={routerProps => (<Auth {...routerProps} onSuccess={handleSuccess} />)}
                 />
-                <Route path="*" render={() => <Redirect to="login"/>}/>
+                <Route path="*" render={() => <Redirect to="login" />} />
               </Switch>
             )
           }

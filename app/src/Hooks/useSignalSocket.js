@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import Connection from "../Connection";
 import ServerConnectionError from "../Connection/Errors/ServerConnectionError";
 
+
 /**
  * Detect user logout by checking the server response status and message.
- * @param isAuthenticated
- * @param handleLogout
- * @returns {unknown}
+ * @param isAuthenticated {boolean} - User auth status
+ * @param handleLogout - Function to call if user is not logged in
+ * @returns {Array.<{signalError: Error,  signalSocket: WebSocket}>}
  */
 function useSignalSocket(isAuthenticated, handleLogout) {
   const [signalSocket, setSignalSocket] = useState(null);
@@ -18,28 +19,25 @@ function useSignalSocket(isAuthenticated, handleLogout) {
 
         setSignalSocket(socket);
 
-        // setIsAuthenticated(true);
-        //
-        // if (localStorage.getItem("username") === "lavi") {
-        //   const peer = await a.findPeer("alex");
+
+        // if (localStorage.getItem("username") === "lavii") {
+        //   const peer = await socket.findPeer("alexx");
         //
         //   console.log(peer);
         // }
       } catch (error) {
-        if (error instanceof ServerConnectionError && error.closeEvent.code === 1006) {
+        if (error instanceof ServerConnectionError) {
           // user is not logged in
           handleLogout();
         } else {
-          throw error;
+          handleLogout();
+          console.error("Unknown error connecting to signal server!");
         }
       }
     }
 
-    // don't create sockets if we already have one
-    if (signalSocket === null) {
-      getSignalSocket();
-    }
-  }, [isAuthenticated, signalSocket, handleLogout]);
+    getSignalSocket();
+  }, [isAuthenticated, handleLogout]);
 
   return signalSocket;
 }

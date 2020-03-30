@@ -116,77 +116,78 @@ server.on('upgrade', function (request, socket, head) {
 });
 
 wss.on('connection', function (ws, request) {
-  console.log(request.user);
-  console.log(request.session);
+  const { user } = request.session.passport;
 
-  // const { id } = request.user;
+  console.log(user)
 
-  // socketMap.set(id, ws);
+  const { username } = user;
 
-  // ws.on('message', (msg) => {
-  //   const parsedMessage = JSON.parse(msg);
-  //   console.log(`Received message from user ${id}`);
+  socketMap.set(username, ws);
 
-  //   switch (parsedMessage.action) {
-  //     case "DISCOVER": {
-  //       const { recipient } = parsedMessage.body;
+  ws.on('message', (msg) => {
+    const parsedMessage = JSON.parse(msg);
+    console.log(`Received message from user ${username}`);
 
-  //       if (!map.has(recipient)) {
-  //         ws.send({ status: "error", message: "Coudn't find recipient!" });
-  //       } else {
-  //         const { data } = parsedMessage.body;
-
-  //         const message = JSON.stringify({
-  //           action: "DISCOVER",
-  //           status: "OK",
-  //           body: {
-  //             sender: request.session.id,
-  //             data,
-  //           }
-  //         });
-
-  //         const socket = map.get(recipient);
-
-  //         console.log(`Sending message to user  ${recipient}`)
-  //         socket.send(message);
-  //       }
-
-  //       break;
-  //     }
-
-  //     case "DISCOVER-RESPONSE": {
-  //       const { recipient } = parsedMessage.body;
-
-  //       if (!map.has(recipient)) {
-  //         ws.send({ status: "error", message: "Coudn't find recipient!" });
-  //       } else {
-  //         const { data } = parsedMessage.body;
-
-  //         const message = JSON.stringify({
-  //           action: "DISCOVER-RESPONSE",
-  //           status: "OK",
-  //           body: {
-  //             sender: request.session.id,
-  //             data,
-  //           }
-  //         });
-
-  //         const socket = map.get(recipient);
-
-  //         console.log(`Sending message to user  ${recipient}`)
-  //         socket.send(message);
-  //       }
-
-  //       break;
-  //     }
-
-  //     default:
-  //       break;
-  //   }
-  // });
+    // switch (parsedMessage.action) {
+    //   case "DISCOVER": {
+    //     const { recipient } = parsedMessage.body;
+    //
+    //     if (!socketMap.has(recipient)) {
+    //       ws.send({ status: "error", message: "Coudn't find recipient!" });
+    //     } else {
+    //       const { data } = parsedMessage.body;
+    //
+    //       const message = JSON.stringify({
+    //         action: "DISCOVER",
+    //         status: "OK",
+    //         body: {
+    //           sender: request.session.username,
+    //           data,
+    //         }
+    //       });
+    //
+    //       const socket = socketMap.get(recipient);
+    //
+    //       console.log(`Sending message to user  ${recipient}`)
+    //       socket.send(message);
+    //     }
+    //
+    //     break;
+    //   }
+    //
+    //   case "DISCOVER-RESPONSE": {
+    //     const { recipient } = parsedMessage.body;
+    //
+    //     if (!socketMap.has(recipient)) {
+    //       ws.send({ status: "error", message: "Coudn't find recipient!" });
+    //     } else {
+    //       const { data } = parsedMessage.body;
+    //
+    //       const message = JSON.stringify({
+    //         action: "DISCOVER-RESPONSE",
+    //         status: "OK",
+    //         body: {
+    //           sender: request.session.username,
+    //           data,
+    //         }
+    //       });
+    //
+    //       const socket = socketMap.get(recipient);
+    //
+    //       console.log(`Sending message to user  ${recipient}`)
+    //       socket.send(message);
+    //     }
+    //
+    //     break;
+    //   }
+    //
+    //   default:
+    //     break;
+    // }
+  });
 
   ws.on('close', function () {
-    socketMap.delete(userId);
+    socketMap.delete(username);
   });
 });
 
