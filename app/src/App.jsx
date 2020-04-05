@@ -3,9 +3,9 @@ import axios from "axios";
 import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-dom";
 import { createMuiTheme, ThemeProvider, makeStyles } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
-import Auth from "./UI/Auth";
-import NotFound404 from "./UI/404";
-import Dashboard from "./UI/Dashboard";
+import Auth from "./UI/Pages/Auth";
+import NotFound404 from "./UI/Pages/404";
+import Dashboard from "./UI/Pages/Dashboard";
 import useSignalSocket from "./Hooks/useSignalSocket";
 
 
@@ -45,12 +45,11 @@ const theme = createMuiTheme({
 function App() {
   const classes = useStyles();
 
-  const [peers, setPeers] = useState([]);
-
   // set initial auth status to true if username is set so we don't do a unnecessary render if he is actually logged in
   // servers returns 404 if we are not authenticated so this is not a problem if we handle it inside useSignalSocket
-  const username = localStorage.getItem("username");
-  const [isAuthenticated, setIsAuthenticated] = useState(!!username);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => setIsAuthenticated(!!localStorage.getItem("username")), []);
 
 
   function handleLogout() {
@@ -110,7 +109,11 @@ function App() {
           {
             isAuthenticated ? (
               <Switch>
-                <Route exact path="/" render={routerProps => (<Dashboard {...routerProps} />)} />
+                <Route
+                  exact
+                  path="/"
+                  render={routerProps => (<Dashboard {...routerProps} signalSocket={signalSocket} />)}
+                />
                 <Route
                   exact
                   path={["/login", "/register"]}

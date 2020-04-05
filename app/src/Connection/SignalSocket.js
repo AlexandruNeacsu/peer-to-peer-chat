@@ -11,21 +11,21 @@ let signalSocketInterface = null;
 let signalSocketLastStatus = WebSocket.CONNECTING;
 
 // TODO refactor to class
+// TODO handler simple-peer errors!
+// TODO when first connecting to peer pass all metadata: avatar, etc.
 
 function getSignalSocketInterface() {
   // prevent re-renders by using the same object
   if (signalSocketInterface) return signalSocketInterface;
 
   signalSocketInterface = {
-
-    // send: (peer, message) => {
-    //   peer.send(JSON.stringify(message));
-    // },
-
-    // onMessage: (callback) => {
-    //   emitter.on("message", callback);
-    // },
-
+    /**
+     *
+     * @param peerName
+     * @returns {Promise<SimplePeer>}
+     *
+     * TODO reject
+     */
     findPeer: (peerName) => new Promise((resolve, reject) => {
       const peer = new SimplePeer({ initiator: true, trickle: false });
 
@@ -40,9 +40,6 @@ function getSignalSocketInterface() {
       });
 
       const callback = (signalData) => {
-        console.log(signalData);
-        console.log("peer signal");
-
         peer.signal(signalData);
 
         resolve(peer);
@@ -54,6 +51,10 @@ function getSignalSocketInterface() {
       console.log(emitter.on("DISCOVER-RESPONSE", callback));
     }),
 
+    /**
+     * Closes the signaling websocket
+     * @returns {Promise<CloseEvent>}
+     */
     close: () => new Promise((resolveClose, rejectClose) => {
       try {
         signalSocketLastStatus = WebSocket.CLOSING;
@@ -94,24 +95,22 @@ const Connection = () => new Promise((resolve, reject) => {
 
     signalSocket.onmessage = (message) => {
       const parsedMessaged = JSON.parse(message.data);
-      console.log("received");
-      console.log(parsedMessaged);
 
       const { action, body } = parsedMessaged;
       const { data } = body;
-
 
       switch (action) {
         case "DISCOVER": {
           // TODO: ask user if he wants to accept
           const rtc = new SimplePeer({ initiator: false, trickle: false });
+
           rtc.signal(data);
 
           const { sender } = body;
-          rtc.on("signal", (data) => signalSocket.send(JSON.stringify({
+          rtc.on("signal", (signalData) => signalSocket.send(JSON.stringify({
             action: "DISCOVER-RESPONSE",
             body: {
-              data,
+              data: signalData,
               recipient: sender,
             },
           })));
@@ -120,15 +119,18 @@ const Connection = () => new Promise((resolve, reject) => {
             peers.push(rtc);
           });
 
-          // rtc.on('data', (data) => {
+          // rtc.on("data", (data) => {
           //   const msg = JSON.parse(data);
-          //   emitter.emit('message', msg);
+          //   console.log(msg);
+          //   // emitter.emit('message', msg);
           // });
 
           break;
         }
 
         case "DISCOVER-RESPONSE": {
+          // TODO handle discover error, it crashes
+
           if (parsedMessaged.status !== "error") {
             console.log("resp");
             console.log(emitter.emit("DISCOVER-RESPONSE", data));

@@ -7,6 +7,7 @@ const http = require('http');
 const passport = require("./modules/passport");
 const { User } = require("./modules/sequelize");
 
+// TODO find users by id, so a user can change the username(store the id on the client)
 
 const app = express();
 
@@ -117,9 +118,6 @@ server.on('upgrade', function (request, socket, head) {
 
 wss.on('connection', function (ws, request) {
   const { user } = request.session.passport;
-
-  console.log(user)
-
   const { username } = user;
 
   socketMap.set(username, ws);
@@ -127,63 +125,65 @@ wss.on('connection', function (ws, request) {
   ws.on('message', (msg) => {
     const parsedMessage = JSON.parse(msg);
     console.log(`Received message from user ${username}`);
+    console.log(parsedMessage)
 
-    // switch (parsedMessage.action) {
-    //   case "DISCOVER": {
-    //     const { recipient } = parsedMessage.body;
-    //
-    //     if (!socketMap.has(recipient)) {
-    //       ws.send({ status: "error", message: "Coudn't find recipient!" });
-    //     } else {
-    //       const { data } = parsedMessage.body;
-    //
-    //       const message = JSON.stringify({
-    //         action: "DISCOVER",
-    //         status: "OK",
-    //         body: {
-    //           sender: request.session.username,
-    //           data,
-    //         }
-    //       });
-    //
-    //       const socket = socketMap.get(recipient);
-    //
-    //       console.log(`Sending message to user  ${recipient}`)
-    //       socket.send(message);
-    //     }
-    //
-    //     break;
-    //   }
-    //
-    //   case "DISCOVER-RESPONSE": {
-    //     const { recipient } = parsedMessage.body;
-    //
-    //     if (!socketMap.has(recipient)) {
-    //       ws.send({ status: "error", message: "Coudn't find recipient!" });
-    //     } else {
-    //       const { data } = parsedMessage.body;
-    //
-    //       const message = JSON.stringify({
-    //         action: "DISCOVER-RESPONSE",
-    //         status: "OK",
-    //         body: {
-    //           sender: request.session.username,
-    //           data,
-    //         }
-    //       });
-    //
-    //       const socket = socketMap.get(recipient);
-    //
-    //       console.log(`Sending message to user  ${recipient}`)
-    //       socket.send(message);
-    //     }
-    //
-    //     break;
-    //   }
-    //
-    //   default:
-    //     break;
-    // }
+    switch (parsedMessage.action) {
+      case "DISCOVER": {
+        const { recipient } = parsedMessage.body;
+
+        if (!socketMap.has(recipient)) {
+          console.error(`Coudn't find peer ${recipient}`);
+          ws.send(JSON.stringify({ status: "error", message: "Coudn't find recipient!" })); // TODO standardize error messages
+        } else {
+          const { data } = parsedMessage.body;
+
+          const message = JSON.stringify({
+            action: "DISCOVER",
+            status: "OK",
+            body: {
+              sender: username,
+              data,
+            }
+          });
+
+          const socket = socketMap.get(recipient);
+
+          console.log(`Sending message to user  ${recipient}`)
+          socket.send(message);
+        }
+
+        break;
+      }
+
+      case "DISCOVER-RESPONSE": {
+        const { recipient } = parsedMessage.body;
+
+        if (!socketMap.has(recipient)) {
+          ws.send({ status: "error", message: "Coudn't find recipient!" });
+        } else {
+          const { data } = parsedMessage.body;
+
+          const message = JSON.stringify({
+            action: "DISCOVER-RESPONSE",
+            status: "OK",
+            body: {
+              sender: username,
+              data,
+            }
+          });
+
+          const socket = socketMap.get(recipient);
+
+          console.log(`Sending message to user  ${recipient}`)
+          socket.send(message);
+        }
+
+        break;
+      }
+
+      default:
+        break;
+    }
   });
 
   ws.on('close', function () {

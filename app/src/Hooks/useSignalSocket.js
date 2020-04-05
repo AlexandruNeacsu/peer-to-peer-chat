@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Connection from "../Connection";
+import Connection from "../Connection/SignalSocket";
 import ServerConnectionError from "../Connection/Errors/ServerConnectionError";
 
 
@@ -18,13 +18,6 @@ function useSignalSocket(isAuthenticated, handleLogout) {
         const socket = await Connection();
 
         setSignalSocket(socket);
-
-
-        // if (localStorage.getItem("username") === "lavii") {
-        //   const peer = await socket.findPeer("alexx");
-        //
-        //   console.log(peer);
-        // }
       } catch (error) {
         if (error instanceof ServerConnectionError) {
           // user is not logged in
