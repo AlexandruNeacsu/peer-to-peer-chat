@@ -4,14 +4,14 @@ import Drawer from "@material-ui/core/Drawer";
 import Divider from "@material-ui/core/Divider";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import TextField from "@material-ui/core/TextField";
-import ContactPage from "./ContactPage";
-import ContactList from "./ContactList";
-import UserAvatar from "../../Components/UserAvatar";
 import List from "@material-ui/core/List";
 import { ListSubheader } from "@material-ui/core";
 import { t } from "react-i18nify";
 import IconButton from "@material-ui/core/IconButton";
 import PersonAddIcon from "@material-ui/icons/PersonAdd";
+import UserAvatar from "../../Components/UserAvatar";
+import ContactList from "./ContactList";
+import ContactPage from "./ContactPage";
 import AddFriendDialog from "./AddFriendDialog";
 import User from "../../../Database/Schemas/User";
 import database from "../../../Database";
@@ -109,7 +109,7 @@ function Dashboard({ signalSocket }) {
         anchor="left"
       >
 
-        <UserAvatar username={username}/>
+        <UserAvatar username={username} />
 
         {/* TODO incarca optiuni dupa ce user a scris cateva litere...  */}
         <Autocomplete
@@ -118,31 +118,39 @@ function Dashboard({ signalSocket }) {
           freeSolo
           options={["asfas", "asfasf", "asfasfaf"]}
           renderInput={params => (
-            <TextField {...params} label="freeSolo" margin="dense"/>
+            <TextField {...params} label="freeSolo" margin="dense" />
           )}
         />
 
         {/* <div className={classes.toolbar} /> */}
-        <Divider/>
+        <Divider />
 
         <List>
           <ListSubheader>
             {t("Contacts.AddFriend")}
             <IconButton className={classes.friendAddButton} onClick={() => setModalOpen(true)}>
-              <PersonAddIcon/>
+              <PersonAddIcon />
             </IconButton>
           </ListSubheader>
-          <ContactList setSelectedFriend={setSelectedFriend} friends={friends} setFriends={setFriends}/>
+          <ContactList
+            setSelectedFriend={setSelectedFriend}
+            friends={friends}
+            setFriends={setFriends}
+          />
         </List>
 
 
       </Drawer>
 
       {/* TODO add something */}
-      {selectedFriend ? <ContactPage selectedFriend={selectedFriend}/> : "TODO"}
+      {selectedFriend ? <ContactPage selectedFriend={selectedFriend} /> : "TODO"}
 
 
-      <AddFriendDialog open={modalOpen} handleClose={() => setModalOpen(false)} handleSubmit={handleAddFriend}/>
+      <AddFriendDialog
+        open={modalOpen}
+        handleClose={() => setModalOpen(false)}
+        handleSubmit={handleAddFriend}
+      />
     </>
   );
 }

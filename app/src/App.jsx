@@ -1,20 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-dom";
-import { createMuiTheme, ThemeProvider, makeStyles } from "@material-ui/core/styles";
+import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Auth from "./UI/Pages/Auth";
 import NotFound404 from "./UI/Pages/404";
 import Dashboard from "./UI/Pages/Dashboard";
 import useSignalSocket from "./Hooks/useSignalSocket";
 
-
-const useStyles = makeStyles(theme => ({
-  app: {
-    display: "flex",
-    height: "100%",
-  },
-}));
 
 const theme = createMuiTheme({
   // palette: {
@@ -43,8 +36,6 @@ const theme = createMuiTheme({
 
 
 function App() {
-  const classes = useStyles();
-
   // set initial auth status to true if username is set so we don't do a unnecessary render if he is actually logged in
   // servers returns 404 if we are not authenticated so this is not a problem if we handle it inside useSignalSocket
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -101,38 +92,33 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-
-      <div className={classes.app}>
-
-
-        <Router>
-          {
-            isAuthenticated ? (
-              <Switch>
-                <Route
-                  exact
-                  path="/"
-                  render={routerProps => (<Dashboard {...routerProps} signalSocket={signalSocket} />)}
-                />
-                <Route
-                  exact
-                  path={["/login", "/register"]}
-                  render={routerProps => (<Redirect {...routerProps} to="/" />)}
-                />
-                <Route path="*" exact component={NotFound404} />
-              </Switch>
-            ) : (
-              <Switch>
-                <Route
-                  path={["/login", "/register"]}
-                  render={routerProps => (<Auth {...routerProps} onSuccess={handleSuccess} />)}
-                />
-                <Route path="*" render={() => <Redirect to="login" />} />
-              </Switch>
-            )
-          }
-        </Router>
-      </div>
+      <Router>
+        {
+          isAuthenticated ? (
+            <Switch>
+              <Route
+                exact
+                path="/"
+                render={routerProps => <Dashboard {...routerProps} signalSocket={signalSocket} />}
+              />
+              <Route
+                exact
+                path={["/login", "/register"]}
+                render={routerProps => <Redirect {...routerProps} to="/" />}
+              />
+              <Route path="*" exact component={NotFound404} />
+            </Switch>
+          ) : (
+            <Switch>
+              <Route
+                path={["/login", "/register"]}
+                render={routerProps => <Auth {...routerProps} onSuccess={handleSuccess} />}
+              />
+              <Route path="*" render={() => <Redirect to="login" />} />
+            </Switch>
+          )
+        }
+      </Router>
     </ThemeProvider>
   );
 }
