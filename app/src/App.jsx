@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-dom";
+import { BrowserRouter as Router, Redirect, Route, Switch } from "react-router-dom";
+import Dexie from "dexie";
 import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Auth from "./UI/Pages/Auth";
-import NotFound404 from "./UI/Pages/404";
-import Dashboard from "./UI/Pages/Dashboard";
-import useSignalSocket from "./Hooks/useSignalSocket";
+// import Dashboard from "./UI/Pages/Dashboard";
+import DatabaseHandler from "./Database";
 
 
 const theme = createMuiTheme({
@@ -36,85 +35,105 @@ const theme = createMuiTheme({
 
 
 function App() {
-  // set initial auth status to true if username is set so we don't do a unnecessary render if he is actually logged in
-  // servers returns 404 if we are not authenticated so this is not a problem if we handle it inside useSignalSocket
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // TODO ensure integrity of data!(ex: someone changes username using the console)
 
-  useEffect(() => setIsAuthenticated(!!localStorage.getItem("username")), []);
-
-
-  function handleLogout() {
-    localStorage.clear();
-
-    setIsAuthenticated(false);
-  }
-
-  const handleSuccess = () => setIsAuthenticated(true);
 
   // Detect user logout by checking the server response status and message.
+  // useEffect(() => {
+  //   axios.interceptors.response.use(
+  //     response => response,
+  //     (error) => {
+  //       if (error.response) {
+  //         const { status, data } = error.response;
+  //
+  //         switch (status) {
+  //           case 401:
+  //             handleLogout();
+  //             break;
+  //
+  //           case 403:
+  //             if (data.msg === "no access") {
+  //               handleLogout();
+  //             }
+  //
+  //             break;
+  //           default:
+  //             break;
+  //         }
+  //       }
+  //
+  //       return Promise.reject(error);
+  //     },
+  //   );
+  // }, []);
+
+
+  // const signalSocket = useSignalSocket(isAuthenticated, handleLogout, handleDiscover);
+  //
+  // if (signalSocket && !isAuthenticated) {
+  //   setIsAuthenticated(true);
+  // }
+  //
+  // console.log(isAuthenticated);
+
+  // return (
+  //   <ThemeProvider theme={theme}>
+  //     <CssBaseline/>
+  //     <Router>
+  //       <Switch>
+  //         <Route
+  //           exact
+  //           path="/"
+  //           render={routerProps => <Dashboard {...routerProps}/>}
+  //         />
+  //         <Route
+  //           exact
+  //           path="*"
+  //           render={routerProps => <Redirect {...routerProps} to="/"/>}
+  //         />
+  //       </Switch>
+  //     </Router>
+  //   </ThemeProvider>
+  // );
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [needsRegister, setNeedsRegister] = useState(true);
+
   useEffect(() => {
-    axios.interceptors.response.use(
-      response => response,
-      (error) => {
-        if (error.response) {
-          const { status, data } = error.response;
+    async function checkIfUserIsOnMachine() {
+      const exists = await Dexie.exists(DatabaseHandler.DATABASE_NAME);
 
-          switch (status) {
-            case 401:
-              handleLogout();
-              break;
+      setNeedsRegister(!exists);
+    }
 
-            case 403:
-              if (data.msg === "no access") {
-                handleLogout();
-              }
-
-              break;
-            default:
-              break;
-          }
-        }
-
-        return Promise.reject(error);
-      },
-    );
+    checkIfUserIsOnMachine();
   }, []);
 
-  // TODO add loader!
-  const signalSocket = useSignalSocket(isAuthenticated, handleLogout);
+  const handleLoginSuccess = async ({ username, password }) => {
+    await DatabaseHandler.initDatabase(password);
 
-  if (signalSocket && !isAuthenticated) {
+    localStorage.setItem("username", username);
+
     setIsAuthenticated(true);
-  }
+  };
 
-  console.log(isAuthenticated);
 
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
+      <CssBaseline/>
       <Router>
         {
           isAuthenticated ? (
             <Switch>
-              <Route
-                exact
-                path="/"
-                render={routerProps => <Dashboard {...routerProps} signalSocket={signalSocket} />}
-              />
-              <Route
-                exact
-                path={["/login", "/register"]}
-                render={routerProps => <Redirect {...routerProps} to="/" />}
-              />
-              <Route path="*" exact component={NotFound404} />
+              <Route exact path="/">{/*<Dashboard />*/}</Route>
+              <Route path="*"><Redirect to="/"/> </Route>
             </Switch>
           ) : (
             <Switch>
-              <Route
-                path={["/login", "/register"]}
-                render={routerProps => <Auth {...routerProps} onSuccess={handleSuccess} />}
-              />
-              <Route path="*" render={() => <Redirect to="login" />} />
+              <Route exact path="/auth">
+                <Auth onLoginSuccess={handleLoginSuccess} needsRegister={needsRegister}/>
+              </Route>
+              <Route path="*"><Redirect to="/auth"/></Route>
             </Switch>
           )
         }

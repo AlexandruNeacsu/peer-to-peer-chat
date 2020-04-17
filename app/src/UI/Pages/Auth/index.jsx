@@ -1,37 +1,41 @@
-import React, { Component } from "react";
-import { Switch, Route } from "react-router-dom";
+import React, { useState } from "react";
+import { t } from "react-i18nify";
 import Register from "./Register";
 import Login from "./Login";
+import Snackbar from "../../Components/Snackbar";
 
-export default class index extends Component {
-  handleLoginSubmit = async (username) => {
-    const { history, onSuccess } = this.props;
 
-    localStorage.clear();
-    localStorage.setItem("username", username);
+function Auth({ history, onLoginSuccess, needsRegister }) {
+  const [snackBarOptions, setSnackBarOptions] = useState({
+    variant: "",
+    message: "",
+    open: false,
+  });
 
-    await onSuccess();
+
+  const handleSubmit = (user) => {
+    setSnackBarOptions({
+      variant: "success",
+      message: t("Auth.LoginSuccess"),
+      open: true,
+    });
+
+
+    onLoginSuccess(user);
     history.replace("/");
   };
 
-  handleRegisterSubmit = async () => {
-    const { history } = this.props;
-
-    history.replace("/login");
-  };
-
-  render() {
-    return (
-      <div>
-        <Switch>
-          <Route exact path="/login">
-            <Login handleLoginSubmit={this.handleLoginSubmit} />
-          </Route>
-          <Route exact path="/register">
-            <Register handleRegisterSubmit={this.handleRegisterSubmit} />
-          </Route>
-        </Switch>
-      </div>
-    );
-  }
+  return (
+    <div>
+      {needsRegister ? <Register handleSubmit={handleSubmit} /> : <Login handleSubmit={handleSubmit} />}
+      <Snackbar
+        variant={snackBarOptions.variant}
+        message={snackBarOptions.message}
+        open={snackBarOptions.open}
+        handleClose={() => setSnackBarOptions(prevState => ({ ...prevState, open: false }))}
+      />
+    </div>
+  );
 }
+
+export default Auth;

@@ -10,8 +10,10 @@
     "@testing-library/react": "^9.4.1",
     "@testing-library/user-event": "^7.2.1",
     "axios": "^0.19.2",
+    "bcrypt": "^4.0.1",
     "clsx": "^1.1.0",
     "dexie": "^2.0.4",
+    "dexie-encrypted": "^1.2.2",
     "formik": "^2.1.4",
     "moment": "^2.24.0",
     "react": "^16.13.0",
@@ -44,7 +46,9 @@
       "arrow-parens": 0,
       "react/prop-types": 0,
       "react/state-in-constructor": 0,
-      "object-curly-newline": 0
+      "object-curly-newline": 0,
+      "no-underscore-dangle": 0,
+      "max-len": "off"
     }
   },
   "browserslist": {

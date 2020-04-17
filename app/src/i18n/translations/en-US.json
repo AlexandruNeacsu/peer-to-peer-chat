@@ -8,9 +8,7 @@
     "Password": "Password",
     "ConfirmPassword": "Confirm password",
     "Username": "Username",
-    "RegisterMessage": "Already have an account? Login",
-    "LoginMessage": "Don't have an account? Sign up",
-    "Remember": "Remember me",
+    "Remember": "Remember me until I close the browser",
     "Forgot": "Forgot password?",
     "Errors": {
       "UsernameLength": "Username length must be between 5 and 50 caracters!",

@@ -17,9 +17,7 @@
     "Password": "Parola",
     "ConfirmPassword": "Confirmă parola",
     "Username": "Nume de utilizator",
-    "RegisterMessage": "Ai deja cont? Login",
-    "LoginMessage": "Nu ai cont? Înregistrează-te",
-    "Remember": "Ține-mă minte",
+    "Remember": "Ține-mă minte până închid browserul",
     "Forgot": "Ai uitat parola?",
     "Errors": {
       "UsernameLength": "Numele de utilizator trebuie sa aiba intre 5 si 50 de caractere!",
