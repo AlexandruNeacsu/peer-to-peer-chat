@@ -12,6 +12,8 @@ import Paper from "@material-ui/core/Paper";
 import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
 import IconButton from "@material-ui/core/IconButton";
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
+import DeleteIcon from '@material-ui/icons/Delete';
+
 
 const useStyles = makeStyles(theme => ({
   friendAddButton: {
@@ -33,7 +35,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const NotificationsPopper = ({ anchorEl, onClickAway, receivedRequests, sentRequests, handleAccept }) => {
+const NotificationsPopper = ({ anchorEl, onClickAway, receivedRequests, sentRequests, handleAccept, handleReject }) => {
   const classes = useStyles();
 
   return (
@@ -60,6 +62,9 @@ const NotificationsPopper = ({ anchorEl, onClickAway, receivedRequests, sentRequ
                       />
 
                       <ListItemSecondaryAction>
+                        <IconButton edge="end" aria-label="reject" onClick={() => handleReject(id, username)}>
+                          <DeleteIcon />
+                        </IconButton>
                         <IconButton edge="end" aria-label="add" onClick={() => handleAccept(id, username)}>
                           <PersonAddIcon />
                         </IconButton>

@@ -11,7 +11,7 @@ import Dialog from "@material-ui/core/Dialog";
 import Grid from "@material-ui/core/Grid";
 import FormikTextField from "../../Components/FormFields/TextField";
 
-const AddFriendDialog = ({ open, handleClose, handleSubmit }) => (
+const AddContactDialog = ({ open, handleClose, handleSubmit }) => (
   <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
     <DialogTitle id="form-dialog-title">{t("Contacts.AddFriend")}</DialogTitle>
     <DialogContent>
@@ -55,4 +55,4 @@ const AddFriendDialog = ({ open, handleClose, handleSubmit }) => (
   </Dialog>
 );
 
-export default AddFriendDialog;
+export default AddContactDialog;

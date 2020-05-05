@@ -59,7 +59,8 @@
       "react/state-in-constructor": 0,
       "object-curly-newline": 0,
       "no-underscore-dangle": 0,
-      "max-len": "off"
+      "max-len": "off",
+      "no-restricted-syntax": "off"
     }
   },
   "browserslist": {

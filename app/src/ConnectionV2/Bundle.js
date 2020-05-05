@@ -5,7 +5,6 @@ import SECIO from "libp2p-secio";
 import MPLEX from "libp2p-mplex";
 import DHT from "libp2p-kad-dht";
 import PeerInfo from "peer-info";
-import PeerId from "peer-id";
 import pipe from "it-pipe";
 import lp from "it-length-prefixed";
 
