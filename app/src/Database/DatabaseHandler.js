@@ -29,13 +29,24 @@ const DatabaseHandler = {
     let symmetricKey;
 
     // TLDR: Get the key if the DB exists, else generate it
-    // TODO: is localstorage ok?
+    // TODO: is localstorage ok?, clean
 
     if (await Dexie.exists(DATABASE_NAME)) {
-      const encryptedSymmetricKey = localStorage.getItem("encryptedSymmetricKey");
-      const iv = localStorage.getItem("iv");
+      const encryptedSymmetricKeyString = localStorage.getItem("encryptedSymmetricKey");
+      const ivString = localStorage.getItem("iv");
+      const saltString = localStorage.getItem("salt");
 
-      symmetricKey = Encryption.decryptKey(encryptedSymmetricKey, iv, password);
+      const encryptedSymmetricKeyArray = JSON.parse(encryptedSymmetricKeyString);
+      const ivArray = JSON.parse(ivString);
+      const saltArray = JSON.parse(saltString);
+
+
+      symmetricKey = await Encryption.decryptKey(
+        new Uint8Array(encryptedSymmetricKeyArray),
+        new Uint8Array(ivArray),
+        password,
+        new Uint8Array(saltArray),
+      );
     } else {
       localStorage.clear();
 
@@ -44,9 +55,10 @@ const DatabaseHandler = {
       symmetricKey = await Encryption.generateRandomKeyBuffer();
 
       // encrypt the symmetric key with the password
-      const { encryptedSymmetricKey, iv } = await Encryption.encryptKey(symmetricKey, password);
+      const { salt, encryptedKey: encryptedSymmetricKey, iv } = await Encryption.encryptKey(symmetricKey, password);
 
       // store them for later decryption of db
+      localStorage.setItem("salt", salt);
       localStorage.setItem("encryptedSymmetricKey", encryptedSymmetricKey);
       localStorage.setItem("iv", iv);
     }
@@ -55,22 +67,24 @@ const DatabaseHandler = {
 
 
     encrypt(_database, symmetricKey, {
-      friends: encrypt.NON_INDEXED_FIELDS,
+      users: encrypt.NON_INDEXED_FIELDS,
       messages: encrypt.NON_INDEXED_FIELDS,
+      requests: encrypt.NON_INDEXED_FIELDS,
     });
 
+    // TODO: allow only one user with local === true
 
     // stores and indexes
     _database.version(1).stores({
-      // userData: ",",
-      friends: "++id, username", // TODO refine, and move to the same folder as the class
+      users: "id, username", // TODO refine, and move to the same folder as the class
       messages: "++id, ownerId", // TODO
+      requests: "id",
     });
 
     // Dexie does not wait for all hooks to be subscribed (bug?).
     await _database.open();
 
-    _database.friends.mapToClass(User);
+    _database.users.mapToClass(User);
     _database.messages.mapToClass(Message);
   },
 

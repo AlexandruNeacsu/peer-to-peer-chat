@@ -26,4 +26,5 @@ sequelize.sync({ force: false }).then(() => {
 
 module.exports = {
   User,
+  Op: Sequelize.Op,
 };

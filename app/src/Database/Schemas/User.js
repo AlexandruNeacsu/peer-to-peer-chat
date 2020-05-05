@@ -1,13 +1,26 @@
 class User {
   /**
+   * @param {String} id
    * @param {String }username
-   * @param {Blob} avatar
    */
-  constructor(id, username, avatar) {
+  constructor(id, username) {
     // TODO add validations
     this.id = id;
     this.username = username;
-    this.avatar = avatar;
+
+
+    this.avatar = null;
+  }
+
+  get peerInfo() {
+    return this._peerInfo;
+  }
+
+  /**
+   * @param {PeerNode} node
+   */
+  set peerInfo(peerInfo) {
+    this._peerInfo = peerInfo;
   }
 }
 

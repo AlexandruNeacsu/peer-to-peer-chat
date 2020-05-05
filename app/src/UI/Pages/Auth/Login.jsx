@@ -41,14 +41,16 @@ function Login({ handleSubmit }) {
     <div>
       <Formik
         initialValues={{
-          username: "",
           password: "",
         }}
         validationSchema={Yup.object({
-          username: Yup.string().required("Required").min(5, t("Auth.Errors.UsernameLength")).max(50, t("Auth.Errors.UsernameLength")),
           password: Yup.string(),
         })}
-        onSubmit={handleSubmit}
+        onSubmit={(user, { setSubmitting }) => {
+          handleSubmit(user);
+
+          setSubmitting(false);
+        }}
       >
         <Form>
           <Container component="main" maxWidth="xs">
@@ -60,12 +62,6 @@ function Login({ handleSubmit }) {
               <Typography component="h1" variant="h5">
                 {t("Auth.Login")}
               </Typography>
-              <FormikTextField
-                margin="normal"
-                fullWidth
-                label={t("Auth.Username")}
-                name="username"
-              />
               <FormikTextField
                 margin="normal"
                 fullWidth

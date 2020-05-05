@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import ListItem from "@material-ui/core/ListItem";
-import database from "../../../Database";
 import UserAvatar from "../../Components/UserAvatar";
 
 
-export default function ContactList({ friends, setFriends}) {
+export default function ContactList({ friends, setSelectedFriend}) {
   // TODO: online status
   return friends.map(({ username, avatar }) => (
     <ListItem button key={username}>

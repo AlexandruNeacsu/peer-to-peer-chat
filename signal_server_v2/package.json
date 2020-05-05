@@ -1,0 +1,15 @@
+{
+  "name": "signal_server_v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "star-signal --host=localhost",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "libp2p-webrtc-star": "^0.17.9"
+  }
+}

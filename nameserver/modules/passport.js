@@ -11,20 +11,20 @@ passport.use(
   "local",
   new LocalStrategy(
     {
-      usernameField: "username",
+      usernameField: "peerId",
       passwordField: "password",
     },
-    async (username, pass, done) => {
-      if (username && pass) {
-        const user = await getUser({ username });
+    async (peerId, password, done) => {
+      if (peerId && password) {
+        const user = await getUser({ peerId });
 
         if (!user) {
           return done(null, false, {
-            message: "Incorrect username.",
+            message: "Incorrect peerId.",
           });
         }
 
-        if (!bcrypt.compareSync(pass, user.password)) {
+        if (!bcrypt.compareSync(password, user.password)) {
           return done(null, false, {
             message: "Incorrect password.",
           });

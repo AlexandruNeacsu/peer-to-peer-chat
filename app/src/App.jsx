@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Redirect, Route, Switch } from "react-router-dom";
 import Dexie from "dexie";
+import PeerInfo from "peer-info";
 import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Auth from "./UI/Pages/Auth";
-// import Dashboard from "./UI/Pages/Dashboard";
+import Dashboard from "./UI/Pages/Dashboard";
 import DatabaseHandler from "./Database";
+import Loader from "./UI/Components/Loader";
+import axios from "axios";
+import Snackbar from "./UI/Components/Snackbar";
+import { t } from "react-i18nify";
 
 
 const theme = createMuiTheme({
@@ -37,67 +42,13 @@ const theme = createMuiTheme({
 function App() {
   // TODO ensure integrity of data!(ex: someone changes username using the console)
 
-
-  // Detect user logout by checking the server response status and message.
-  // useEffect(() => {
-  //   axios.interceptors.response.use(
-  //     response => response,
-  //     (error) => {
-  //       if (error.response) {
-  //         const { status, data } = error.response;
-  //
-  //         switch (status) {
-  //           case 401:
-  //             handleLogout();
-  //             break;
-  //
-  //           case 403:
-  //             if (data.msg === "no access") {
-  //               handleLogout();
-  //             }
-  //
-  //             break;
-  //           default:
-  //             break;
-  //         }
-  //       }
-  //
-  //       return Promise.reject(error);
-  //     },
-  //   );
-  // }, []);
-
-
-  // const signalSocket = useSignalSocket(isAuthenticated, handleLogout, handleDiscover);
-  //
-  // if (signalSocket && !isAuthenticated) {
-  //   setIsAuthenticated(true);
-  // }
-  //
-  // console.log(isAuthenticated);
-
-  // return (
-  //   <ThemeProvider theme={theme}>
-  //     <CssBaseline/>
-  //     <Router>
-  //       <Switch>
-  //         <Route
-  //           exact
-  //           path="/"
-  //           render={routerProps => <Dashboard {...routerProps}/>}
-  //         />
-  //         <Route
-  //           exact
-  //           path="*"
-  //           render={routerProps => <Redirect {...routerProps} to="/"/>}
-  //         />
-  //       </Switch>
-  //     </Router>
-  //   </ThemeProvider>
-  // );
-
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [needsRegister, setNeedsRegister] = useState(true);
+  const [snackBarOptions, setSnackBarOptions] = useState({
+    variant: "",
+    message: "",
+    open: false,
+  });
 
   useEffect(() => {
     async function checkIfUserIsOnMachine() {
@@ -109,35 +60,90 @@ function App() {
     checkIfUserIsOnMachine();
   }, []);
 
+  const [isLoading, setIsLoading] = useState(true);
+
   const handleLoginSuccess = async ({ username, password }) => {
-    await DatabaseHandler.initDatabase(password);
+    try {
+      if (needsRegister) {
+        localStorage.clear();
 
-    localStorage.setItem("username", username);
+        const userPeerInfo = await PeerInfo.create();
 
-    setIsAuthenticated(true);
+        const id = userPeerInfo.id.toB58String();
+
+        const response = await axios.post("http://localhost:8080/signup", {
+          username,
+          peerId: id,
+          password,
+        }); // TODO: handle not found, etc
+        console.log(response)
+
+        const { data } = response;
+
+        if (data.success) {
+          await DatabaseHandler.initDatabase(password);
+
+          localStorage.setItem("id", id);
+          localStorage.setItem("username", username); // !!!TODO
+
+          const database = DatabaseHandler.getDatabase();
+          await database.users.add({ id, username, peerIdJSON: userPeerInfo.id.toJSON() });
+        }
+      } else {
+        await DatabaseHandler.initDatabase(password);
+      }
+
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    } catch (error) {
+      if (error.response.status === 403) {
+        setSnackBarOptions({
+          variant: "error",
+          message: t("Errors.RegisterUsernameError"), // TODO: add to translations
+          open: true,
+        });
+      } else {
+        console.error(error);
+      }
+      // TODO: catch other errors, if any can raise
+    }
   };
-
 
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline/>
+      <CssBaseline />
       <Router>
         {
           isAuthenticated ? (
             <Switch>
-              <Route exact path="/">{/*<Dashboard />*/}</Route>
-              <Route path="*"><Redirect to="/"/> </Route>
+              <Route exact path="/">
+                <Loader isLoading={isLoading}>
+                  <Dashboard />
+                </Loader>
+              </Route>
+              <Route path="*">
+                <Redirect to="/" />
+              </Route>
             </Switch>
           ) : (
             <Switch>
               <Route exact path="/auth">
-                <Auth onLoginSuccess={handleLoginSuccess} needsRegister={needsRegister}/>
+                <Auth onLoginSuccess={handleLoginSuccess} needsRegister={needsRegister} />
               </Route>
-              <Route path="*"><Redirect to="/auth"/></Route>
+              <Route path="*">
+                <Redirect to="/auth" />
+              </Route>
             </Switch>
           )
         }
       </Router>
+
+      <Snackbar
+        variant={snackBarOptions.variant}
+        message={snackBarOptions.message}
+        open={snackBarOptions.open}
+        handleClose={() => setSnackBarOptions(prevState => ({ ...prevState, open: false }))}
+      />
     </ThemeProvider>
   );
 }

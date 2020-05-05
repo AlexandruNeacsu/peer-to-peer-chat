@@ -11,6 +11,8 @@ import Typography from "@material-ui/core/Typography";
 import Container from "@material-ui/core/Container";
 import { t } from "react-i18nify";
 import FormikTextField from "../../Components/FormFields/TextField";
+import axios from "axios";
+import { ValidationError } from "yup";
 
 
 const useStyles = makeStyles(theme => ({
@@ -36,20 +38,51 @@ const useStyles = makeStyles(theme => ({
 function Register({ handleSubmit }) {
   const classes = useStyles();
 
+  // TODO clear errors after typing
   return (
     <div>
       <Formik
+        validateOnChange={false}
+        validateOnBlur={false}
         initialValues={{
           username: "",
           password: "",
           confirmPassword: "",
         }}
         validationSchema={Yup.object({
-          username: Yup.string().required("Required").min(5, t("Auth.Errors.UsernameLength")).max(50, t("Auth.Errors.UsernameLength")),
+          username: Yup
+            .string()
+            .required("Required")
+            .min(5, t("Auth.Errors.UsernameLength"))
+            .max(50, t("Auth.Errors.UsernameLength"))
+            .test({
+              name: "UsernameNotFree",
+              exclusive: true,
+              message: t("Auth.Errors.UsernameNotFree"),
+              test: async username => {
+                try {
+                  const response = await axios.get(`http://localhost:8080/check/username/${username}`); // TODO: handle not found, etc
+                  const { data } = response;
+
+                  console.log(response)
+
+                  return !!data.success;
+                } catch (error) {
+                  // TODO handle any errors
+                  console.log(error.message);
+
+                  return new ValidationError("Username validation error", username, "username", "validation error"); // TODO translate
+                }
+              },
+            }),
           password: Yup.string().required("Required").min(5, t("Auth.Errors.PasswordLength")),
           confirmPassword: Yup.string().required("Required").min(5, t("Auth.Errors.PasswordLength")).oneOf([Yup.ref("password")], t("Auth.MatchPassword")),
         })}
-        onSubmit={handleSubmit}
+        onSubmit={(user, { setSubmitting }) => {
+          handleSubmit(user);
+
+          setSubmitting(false);
+        }}
       >
         <Form>
           <Container component="main" maxWidth="xs">

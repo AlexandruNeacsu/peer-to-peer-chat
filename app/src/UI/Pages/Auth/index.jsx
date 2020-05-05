@@ -1,17 +1,18 @@
 import React, { useState } from "react";
+import { useHistory } from "react-router-dom";
 import { t } from "react-i18nify";
 import Register from "./Register";
 import Login from "./Login";
 import Snackbar from "../../Components/Snackbar";
 
 
-function Auth({ history, onLoginSuccess, needsRegister }) {
+function Auth({ onLoginSuccess, needsRegister }) {
   const [snackBarOptions, setSnackBarOptions] = useState({
     variant: "",
     message: "",
     open: false,
   });
-
+  const history = useHistory();
 
   const handleSubmit = (user) => {
     setSnackBarOptions({

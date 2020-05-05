@@ -3,7 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/app.iml" filepath="$PROJECT_DIR$/.idea/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../signal_server/.idea/signal_server.iml" filepath="$PROJECT_DIR$/../signal_server/.idea/signal_server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../nameserver/.idea/nameserver.iml" filepath="$PROJECT_DIR$/../nameserver/.idea/nameserver.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../signal_server_v2/.idea/signal_server_v2.iml" filepath="$PROJECT_DIR$/../signal_server_v2/.idea/signal_server_v2.iml" />
     </modules>
   </component>
 </project>
