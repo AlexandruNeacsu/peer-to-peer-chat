@@ -64,6 +64,40 @@ async function acceptRequest(B58StringId, contactUsername) {
   });
 }
 
+/**
+ *
+ * @param setContacts
+ * @param contactId
+ * @param fields
+ * @return {Promise<User>}
+ */
+function updateContact(setContacts, contactId, fields) {
+  return new Promise(resolve => {
+    setContacts(previousContacts => {
+      const contactIndex = previousContacts.findIndex(e => e.id === contactId);
+
+      // node is a contact
+      if (contactIndex !== -1) {
+        const newContacts = [...previousContacts];
+
+        /** @type {User} */
+        const connectedContact = newContacts[contactIndex];
+
+        Object.assign(connectedContact, fields);
+
+        resolve(connectedContact);
+
+        // don't use the same reference
+        return newContacts;
+      }
+
+      resolve(null);
+
+      return previousContacts;
+    });
+  });
+}
+
 function Dashboard() {
   const classes = useStyles();
 
@@ -73,7 +107,7 @@ function Dashboard() {
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   // TODO: show a message or something if not connected to a peer
@@ -83,38 +117,20 @@ function Dashboard() {
 
   /** INITIALIZE NODE */
   useEffect(() => {
-    function updateContact(contactId, fields) {
-      setContacts(previousContacts => {
-        const contactIndex = previousContacts.findIndex(e => e.id === contactId);
-
-        // node is a contact
-        if (contactIndex !== -1) {
-          const newContacts = [...previousContacts];
-
-          /** @type {User} */
-          const connectedContact = newContacts[contactIndex];
-
-          Object.assign(connectedContact, fields);
-
-          // don't use the same reference
-          return newContacts;
-        }
-
-        return previousContacts;
-      });
-    }
+    /* UTILITY FUNCTIONS */
 
     /**
      *
      * @param {PeerInfo} contactPeerInfo
      * @param {boolean} newConnectionStatus
      */
-    function updateContactConnectionStatus(contactPeerInfo, newConnectionStatus) {
+    async function updateContactConnectionStatus(contactPeerInfo, newConnectionStatus) {
       if (newConnectionStatus) {
         setIsConnectedToPeer(true);
       }
 
-      updateContact(
+      await updateContact(
+        setContacts,
         contactPeerInfo.id.toB58String(),
         {
           isConnected: newConnectionStatus,
@@ -123,14 +139,7 @@ function Dashboard() {
       );
     }
 
-    async function handlePeerConnect(node, peerInfo) {
-      // this should be done automatically by libp2p
-      // but it's not
-      await node._dht._add(peerInfo);
-
-      updateContactConnectionStatus(peerInfo, true);
-    }
-
+    /* PROTOCOLS AND EVENTS */
     async function handleAddProtocol({ connection, stream }) {
       // TODO: is this concurrent safe?
       // TODO: do we need to close the connection? how about on a refuse? or after final response?
@@ -170,9 +179,12 @@ function Dashboard() {
             if (status === "REGISTERED") {
               setReceivedRequests(preValues => [...preValues, request]);
             } else {
+              const user = new User(request.id, request.username);
+              user.isConnected = true;
+
               setContacts(prevContacts => ([
                 ...prevContacts,
-                request,
+                user,
               ]));
             }
             break;
@@ -243,8 +255,9 @@ function Dashboard() {
         try {
           const data = await receiveData(stream.source);
 
-
           if (data.length) {
+            const isNotSameUser = !selectedContact || (selectedContact.id !== user.id);
+
             // TODO: use message class
             // TODO: parse the message to ensure structure
             const messages = data.map(message => JSON.parse(message))
@@ -252,35 +265,45 @@ function Dashboard() {
                 // TODO: handle images, maps, etc...
                 ...message,
                 receivedDate: moment().toDate(),
-                ownerId: user.id,
-                status: "received", // TODO move to an enum
+                partnerId: user.id,
+                partnerUsername: user.username, // TODO: this will show old username in chat history
+                senderId: user.id,
+                status: isNotSameUser ? "received" : "read", // TODO move to an enum
               }));
 
-            console.log("saving messages");
-            console.log(messages);
+            console.log(selectedContact)
+            console.log(user)
+            console.log(isNotSameUser)
 
-            let unread = 0;
+            const chatItem = {
+              title: user.username,
+              subtitle: messages[messages.length - 1].data,
+              date: messages[messages.length - 1].receivedDate,
+              unread: 0,
+            };
 
-            await database.transaction("rw", database.messages, async () => {
-              await database.messages.bulkAdd(messages);
 
-              unread = await database.messages.where("status").equals("received").count();
+            await database.transaction("rw", database.users, database.conversations, async () => {
+              await database.conversations.bulkAdd(messages);
+
+              if (isNotSameUser) {
+                chatItem.unread = await database.conversations.where({
+                  status: "received",
+                  partnerId: user.id,
+                }).count();
+              }
+
+              await database.users.put({ ...user, chatItem });
             });
 
+            /**
+             * @type {User}
+             */
+            const contact = await updateContact(setContacts, user.id, { chatItem });
 
-            updateContact(
-              user.id,
-              {
-                chatItem: {
-                  // avatar={'https://facebook.github.io/react/img/logo.svg'}
-                  // alt={'Reactjs'}
-                  title: user.username,
-                  subtitle: messages[messages.length - 1].data,
-                  date: messages[messages.length - 1].receivedDate,
-                  unread,
-                },
-              },
-            );
+            if (contact) {
+              contact.handleMessages(messages);
+            }
           } else {
             // TODO throw MessageIsNullException or something
           }
@@ -292,17 +315,24 @@ function Dashboard() {
       }
     }
 
+    /* MAIN */
     async function getOwnNode() {
       try {
         const database = DatabaseHandler.getDatabase();
 
         const userId = localStorage.getItem("id");
-        const { peerIdJSON } = await database.users.get({ id: userId });
+        const user = await database.users.get({ id: userId });
 
-        const peerId = await PeerId.createFromJSON(peerIdJSON);
+        const peerId = await PeerId.createFromJSON(user.peerIdJSON);
         const node = await createNode(peerId);
 
-        node.on("peer:connect", (peerInfo) => handlePeerConnect(node, peerInfo));
+        node.on("peer:connect", async (peerInfo) => {
+          // this should be done automatically by libp2p
+          // but it's not
+          await node._dht._add(peerInfo);
+
+          await updateContactConnectionStatus(peerInfo, true);
+        });
         node.on("peer:disconnect", (peerInfo) => updateContactConnectionStatus(peerInfo, false));
         node.handle("/add/1.0.0", handleAddProtocol); // TODO gestion this better
         node.handle("/chat/1.0.0", (connectionData) => handleChatProtocol(node, connectionData));
@@ -320,9 +350,9 @@ function Dashboard() {
     if (!ownNode) {
       getOwnNode();
     }
-  }, [ownNode]);
+  }, [ownNode, selectedContact]);
 
-  /** LOAD DATABASE DATA */
+  /* LOAD DATABASE DATA */
   useEffect(() => {
     async function getDatabaseData() {
       try {
@@ -348,22 +378,23 @@ function Dashboard() {
     getDatabaseData();
   }, []);
 
+  /* HANDLERS */
   const handleAddContact = async (contactUsername) => {
     // TODO redial for peers we have the id but didn't found!
     try {
       // get the associated peerId
       const response = await axios.get(`http://localhost:8080/username/${contactUsername}`); // TODO: handle not found, etc
       const { peerId: B58StringId } = response.data;
-      const contact = { id: B58StringId, username: contactUsername };
+      const contact = new User(B58StringId, contactUsername);
 
       const database = DatabaseHandler.getDatabase();
       const isInDatabase = await database.requests.get({ id: contact.id });
 
       const peerId = PeerId.createFromB58String(contact.id);
 
-      const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
+      contact.peerInfo = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
       // try to dial
-      const { stream } = await ownNode.dialProtocol(info, "/add/1.0.0");
+      const { stream } = await ownNode.dialProtocol(contact.peerInfo, "/add/1.0.0");
 
       /*
       TODO: what to do if peer is not found
@@ -401,10 +432,10 @@ function Dashboard() {
         if (message === "REGISTERED") {
           // TODO set snackbar to succesful
 
-          await database.requests.add({ ...contact, sent: true });
+          await database.requests.add({ ...contact.export(), sent: true });
           setSentRequests(prevValues => ([...prevValues, contact]));
         } else if (message === "ACCEPTED") {
-          await database.users.add(contact);
+          await database.users.add(contact.export());
 
           setContacts(prevContacts => ([...prevContacts, contact]));
         }
@@ -439,8 +470,11 @@ function Dashboard() {
       const { stream } = await ownNode.dialProtocol(info, "/add/1.0.0");
       await sendData(stream.sink, ["ACCEPTED"]); // TODO what if they didn't receive the message?
 
+      const contact = new User(B58StringId, contactUsername);
+      contact.peerInfo = info;
+
       // TODO use user object
-      setContacts(prevContacts => ([...prevContacts, { id: B58StringId, username: contactUsername }]));
+      setContacts(prevContacts => ([...prevContacts, contact]));
       setReceivedRequests(prevRequsts => prevRequsts.filter(req => req.id !== B58StringId));
     } catch (error) {
       // TODO
@@ -473,28 +507,36 @@ function Dashboard() {
     }
   }
 
-  /**
-   *
-   * @param {String }id
-   * @param {String} message
-   * @return {Promise<void>}
-   */
-  async function sendTextMessage(id, message) {
-    if (message) {
+  async function handleSelectContact(contact) {
+    if (!selectedContact || (contact.id !== selectedContact.id)) {
       try {
-        const structuredMessage = {
-          type: "TEXT",
-          data: message,
-          sentDate: moment().toDate(),
-        };
+        const updatedContact = await updateContact(
+          setContacts,
+          contact.id,
+          {
+            chatItem: {
+              ...contact.chatItem,
+              unread: 0,
+            },
+          },
+        );
 
-        const peerId = PeerId.createFromB58String(id);
-        // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
-        const { stream } = await ownNode.dialProtocol(peerId, "/chat/1.0.0"); // todo: works withouth info?
+        setSelectedContact(contact);
 
-        const data = JSON.stringify(structuredMessage);
+        const database = DatabaseHandler.getDatabase();
 
-        await sendData(stream.sink, [data]);
+        // await database.transaction("rw", database.users, database.conversations, async () => {
+        //   await database.conversations
+        //     .where({
+        //       status: "received",
+        //       partnerId: updatedContact.id,
+        //     })
+        //     .modify(conversation => {
+        //       console.log(conversation);
+        //       conversation.status = "read";
+        //     });
+        //   await database.users.put(updatedContact.export());
+        // });
       } catch (error) {
         // TODO
         console.log(error);
@@ -503,6 +545,74 @@ function Dashboard() {
     }
   }
 
+  /**
+   *
+   * @param {User} user
+   * @param {String} text
+   * @return {Promise<{sentDate: Date, senderId: string, data: *, partnerUsername: string, partnerId: String, type: string, status: string}>}
+   */
+  async function sendTextMessage(user, text) {
+    if (text) {
+      try {
+        const message = {
+          type: "TEXT",
+          data: text,
+          sentDate: moment().toDate(),
+        };
+
+        const peerId = PeerId.createFromB58String(user.id);
+        // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
+        const { stream } = await ownNode.dialProtocol(peerId, "/chat/1.0.0"); // todo: works withouth info?
+
+        const data = JSON.stringify(message);
+
+        await sendData(stream.sink, [data]);
+
+
+        const structuredMessage = {
+          // TODO: handle images, maps, etc...
+          ...message,
+          partnerId: user.id,
+          partnerUsername: user.username, // TODO: will show old username in chat history
+          senderId: localStorage.getItem("id"),
+          status: "sent", // TODO move to an enum && handle wainting status(before sending with sendData)
+        };
+
+        const database = DatabaseHandler.getDatabase();
+
+        const contact = await updateContact(
+          setContacts,
+          user.id,
+          {
+            chatItem: {
+              title: user.username,
+              subtitle: text,
+              date: message.sentDate,
+              unread: 0, // sanity check
+            },
+          },
+        );
+
+        await database.transaction("rw", database.users, database.conversations, async () => {
+          await database.conversations.add(structuredMessage);
+          await database.users.put(contact.export());
+        });
+
+        return structuredMessage;
+      } catch (error) {
+        // TODO, maybe try to resend, show disconnected, etc
+        console.log(error);
+        console.log(error.message);
+
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+
+  console.log(selectedContact)
   return (
     <Loader isLoading={!ownNode}>
       <Drawer
@@ -515,7 +625,7 @@ function Dashboard() {
       >
 
         <div className={classes.userItems}>
-          <UserAvatar username={username} showBadge isOnline={isConnectedToPeers} />
+          <UserAvatar username={username} isOnline={isConnectedToPeers} showBadge showUsername />
           <IconButton
             aria-label="receivedRequests"
             color="primary"
@@ -550,7 +660,7 @@ function Dashboard() {
           </ListSubheader>
 
           <ContactList
-            setSelectedContact={setSelectedContact}
+            setSelectedContact={handleSelectContact}
             contacts={contacts}
           />
         </List>
@@ -558,7 +668,16 @@ function Dashboard() {
       </Drawer>
 
       {/* TODO add something */}
-      {selectedContact ? <ContactPage selectedContact={selectedContact} sendTextMessage={sendTextMessage} /> : "TODO"}
+      {
+        selectedContact
+          ? (
+            <ContactPage
+              selectedContact={selectedContact}
+              sendTextMessage={sendTextMessage}
+            />
+          )
+          : "TODO"
+      }
 
 
       <AddContactDialog

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Avatar from "@material-ui/core/Avatar";
 import AccountCircleIcon from "@material-ui/icons/AccountCircle";
@@ -19,7 +19,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 
-function UserAvatar({ username, image, showBadge = false, isOnline = false }) {
+function UserAvatar({ username, image, isOnline = false, showBadge = false, showUsername = false }) {
   const classes = useStyles();
 
   return (
@@ -36,12 +36,16 @@ function UserAvatar({ username, image, showBadge = false, isOnline = false }) {
               }}
               variant="dot"
             >
-              <Avatar alt={username} src={image || AccountCircleIcon}/>
+              <Avatar alt={username} src={image || AccountCircleIcon} />
             </StatusBadge>
           )
-          : <Avatar alt={username} src={image || AccountCircleIcon}/>
+          : <Avatar alt={username} src={image || AccountCircleIcon} />
       }
-      <Typography variant="subtitle1" className={classes.text}>{username}</Typography>
+
+      {
+        showUsername ? <Typography variant="subtitle1" className={classes.text}>{username}</Typography> : null
+      }
+
     </div>
   );
 }

@@ -71,12 +71,11 @@ function App() {
 
         const id = userPeerInfo.id.toB58String();
 
-        const response = await axios.post("http://localhost:8080/signup", {
+        const response = await axios.post("http://192.168.1.2:8080/signup", {
           username,
           peerId: id,
           password,
         }); // TODO: handle not found, etc
-        console.log(response)
 
         const { data } = response;
 
@@ -96,14 +95,23 @@ function App() {
       setIsAuthenticated(true);
       setIsLoading(false);
     } catch (error) {
-      if (error.response.status === 403) {
+      if (error.response) {
         setSnackBarOptions({
           variant: "error",
           message: t("Errors.RegisterUsernameError"), // TODO: add to translations
           open: true,
         });
+        console.log(error.response.data);
+        console.log(error.response.status);
+        console.log(error.response.headers);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.log(error.request);
       } else {
-        console.error(error);
+        // TODO id not found, contact not reached, etc...
+        // Something happened in setting up the request that triggered an Error
+        console.log("Error", error.message);
+        console.log(error);
       }
       // TODO: catch other errors, if any can raise
     }

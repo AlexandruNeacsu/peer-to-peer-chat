@@ -21,10 +21,19 @@ const sessionParser = session({
   },
 });
 
+const whitelist = ["http://localhost:3000", "http://192.168.1.2:3000"];
+
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: (origin, callback) => {
+    console.log(origin)
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
-};
+}
 
 app.use(cors(corsOptions));
 app.use(sessionParser);
@@ -159,5 +168,5 @@ app.post("/username/:username", async (req, res) => {
 });
 
 
-app.listen(8080, () => console.log(`Listening on http://localhost:${8080}`)); // TODO: port
+app.listen(8080, "0.0.0.0", () => console.log(`Listening on http://localhost:${8080}`)); // TODO: port
 

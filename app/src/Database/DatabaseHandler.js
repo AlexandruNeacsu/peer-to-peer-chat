@@ -68,7 +68,7 @@ const DatabaseHandler = {
 
     encrypt(_database, symmetricKey, {
       users: encrypt.NON_INDEXED_FIELDS,
-      messages: encrypt.NON_INDEXED_FIELDS,
+      conversations: encrypt.NON_INDEXED_FIELDS,
       requests: encrypt.NON_INDEXED_FIELDS,
     });
 
@@ -77,7 +77,7 @@ const DatabaseHandler = {
     // stores and indexes
     _database.version(2).stores({
       users: "id, username", // TODO refine, and move to the same folder as the class
-      messages: "++id, ownerId, date, status", // TODO
+      conversations: "++id, partnerId, date, status", // TODO
       requests: "id",
     });
 
@@ -85,7 +85,12 @@ const DatabaseHandler = {
     await _database.open();
 
     _database.users.mapToClass(User);
-    _database.messages.mapToClass(Message);
+    // _database.conversations.mapToClass(Message);
+
+    _database.users.hook(
+      "reading",
+      ({ id, username, chatItem, peerIdJSON }) => new User(id, username, chatItem, peerIdJSON),
+    );
   },
 
   closeDatabase: () => {

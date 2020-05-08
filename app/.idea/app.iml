@@ -6,5 +6,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="nameserver" />
     <orderEntry type="module" module-name="signal_server_v2" />
+    <orderEntry type="module" module-name="react-chat-elements" />
   </component>
 </module>

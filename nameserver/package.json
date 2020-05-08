@@ -1,8 +1,8 @@
 {
-  "name": "signal_server",
+  "name": "nameserver",
   "version": "1.0.0",
   "description": "",
-  "main": "signal_server.js",
+  "main": "nameserver.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node --require dotenv/config index.js"

@@ -30,6 +30,7 @@
     "peer-info": "^0.17.5",
     "react": "^16.13.1",
     "react-chat-elements": "^10.9.2",
+    "react-chat-elements-alex": "file:../react-chat-elements",
     "react-dom": "^16.13.1",
     "react-i18nify": "^3.1.6",
     "react-router-dom": "^5.1.2",
@@ -38,6 +39,7 @@
     "react-window": "^1.8.5",
     "react-window-infinite-loader": "^1.0.5",
     "simple-peer": "^9.7.0",
+    "timeago.js": "^4.0.2",
     "yup": "^0.28.5"
   },
   "scripts": {
@@ -83,6 +85,5 @@
   "devDependencies": {
     "eslint-config-airbnb": "^18.1.0",
     "eslint-plugin-react-hooks": "^2.5.1"
-  },
-  "proxy": "http://localhost:8080"
+  }
 }

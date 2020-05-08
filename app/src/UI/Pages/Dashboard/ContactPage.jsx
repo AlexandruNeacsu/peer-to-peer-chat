@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
@@ -36,7 +36,51 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const PAGE_SIZE = 15; // 15 messages
+const PAGE_SIZE = 20; // 15 messages
+
+function formatMessage(message) {
+  return {
+    originalData: message,
+    position: localStorage.getItem("id") === message.senderId ? "right" : "left",
+    replyButton: true,
+    type: "text",
+    theme: "white",
+    title: message.partnerUsername,
+    // titleColor: this.getRandomColor(), // TODO add to user
+    text: message.data,
+    status: message.status,
+    date: message.receivedDate,
+    onReplyMessageClick: () => console.log("onReplyMessageClick"),
+    onReplyClick: () => console.log("onReplyClick"),
+  };
+}
+
+
+async function loadMessages(partnerId, lastEntry) {
+  const database = DatabaseHandler.getDatabase();
+  let messages;
+
+  if (!lastEntry) {
+    // get the latest messages and put them in numerical order
+    messages = await database.conversations
+      .orderBy("id")
+      .reverse()
+      .filter(conversation => conversation.partnerId === partnerId)
+      .limit(PAGE_SIZE)
+      .toArray();
+  } else {
+    messages = await database.conversations
+      .where("id")
+      .below(lastEntry.originalData.id)
+      .filter(conversation => conversation.partnerId === partnerId)
+      .reverse()
+      .limit(PAGE_SIZE)
+      .toArray();
+  }
+
+  return messages.reverse().map(msg => formatMessage(msg));
+}
+
 
 /**
  *
@@ -47,83 +91,78 @@ export default function ContactPage({ selectedContact, sendTextMessage }) {
   const classes = useStyles();
 
   const [page, setPage] = useState(0);
-  const [isLoadNextPage, setIsLoadNextPage] = useState(true);
   const [message, setMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
 
-  // useEffect(() => {
-  //   async function lala() {
-  //     const database = DatabaseHandler.getDatabase();
-  //     console.log(await database.messages.toArray());
-  //   }
-  //
-  //   lala();
-  // });
+  const messagesEndRef = useRef(null);
 
-
-  /* LOAD MESSAGES */
+  /* LOAD MESSAGES AND LISTEN FOR NEW ONES */
   useEffect(() => {
-    async function loadNextMessages() {
-      try {
-        const database = DatabaseHandler.getDatabase();
-        const localUserId = localStorage.getItem("id");
+    const handleMessages = (messages) => {
+      setMessageList(prevMessages => (
+        [
+          ...prevMessages,
+          ...messages.map(msg => formatMessage(msg)),
+        ]
+        // .sort((a, b) => b.id - a.id) // reverse sort
+      ));
+    };
 
-        let messages;
+    selectedContact.on("messages", handleMessages);
 
-        if (messageList.length === 0 && page === 0) {
-          messages = await database.messages
-            .orderBy("id")
-            .limit(PAGE_SIZE)
-            .toArray();
-        } else if (messageList.length > page * PAGE_SIZE) {
-          const lastEntry = messageList[messageList.length - 1];
-
-          messages = await database.messages
-            .where("id")
-            .above(lastEntry.originalData.id)
-            .limit(PAGE_SIZE)
-            .toArray();
-        }
-
-        messages = messages.map(msg => ({
-          originalData: msg,
-          position: localUserId === msg.ownerId ? "right" : "left",
-          replyButton: true,
-          type: "text",
-          theme: "white",
-          title: selectedContact.username,
-          // titleColor: this.getRandomColor(), // TODO add to user
-          text: msg.data,
-          status: msg.status,
-          date: msg.receivedDate,
-          onReplyMessageClick: () => console.log("onReplyMessageClick"),
-          onReplyClick: () => console.log("onReplyClick"),
-        }));
-
+    loadMessages(selectedContact.id)
+      .then((messages) => {
+        setMessageList(messages);
         setPage(prevPage => prevPage + 1);
-        if (messages.length !== 0) {
-          setMessageList(prevMessages => ([...prevMessages, ...messages]));
-        }
-      } catch (error) {
-        // TODO
+
+        messagesEndRef.current.scrollIntoView();
+      })
+      .catch((error) => {
         console.log(error);
         console.log(error.message);
+      });
+
+    return () => {
+      setPage(0);
+      setMessageList([]);
+      selectedContact.removeListener("messages", handleMessages);
+    };
+  }, [selectedContact]);
+
+
+  /* HANDLE PAGE SCROLL */
+  useEffect(() => {
+    window.onscroll = async () => {
+      if (window.pageYOffset === 0 && messageList.length && (messageList.length >= page * PAGE_SIZE)) {
+        try {
+          const lastEntry = messageList[0];
+
+          const messages = await loadMessages(selectedContact.id, lastEntry);
+
+          setMessageList(prevMessages => ([...messages, ...prevMessages]));
+          setPage(prevPage => prevPage + 1);
+        } catch (error) {
+          // TODO
+          console.log(error);
+          console.log(error.message);
+        }
       }
-    }
+    };
+  }, [page, messageList, selectedContact]);
 
-    if (isLoadNextPage) {
-      loadNextMessages();
+  const handleSubmit = async () => {
+    const msg = await sendTextMessage(selectedContact, message);
 
-      setIsLoadNextPage(false);
-    }
-  }, [page, messageList, isLoadNextPage]);
+    setMessage("");
+    setMessageList(prevMessages => [
+      ...prevMessages,
+      formatMessage(msg),
+    ]);
+  };
 
 
-  console.log(messageList);
-
+  console.log(messageList)
   // TODO trimite mesaj cand apasam enter
-
-
   return (
     <div className={classes.content}>
       <AppBar position="fixed" className={classes.appBar}>
@@ -145,6 +184,8 @@ export default function ContactPage({ selectedContact, sendTextMessage }) {
         />
       </main>
 
+      <div ref={messagesEndRef} />
+
       {/* COMPOSE MESSAGE */}
       <footer className={classes.compose}>
         <TextField
@@ -156,7 +197,7 @@ export default function ContactPage({ selectedContact, sendTextMessage }) {
           value={message}
           onChange={e => setMessage(e.target.value)}
         />
-        <IconButton aria-label="send" onClick={() => sendTextMessage(selectedContact.id, message)}>
+        <IconButton aria-label="send" onClick={handleSubmit}>
           <SendIcon />
         </IconButton>
       </footer>
