@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PeerId from "peer-id";
 import { t } from "react-i18nify";
+import moment from "moment/moment";
 import { makeStyles } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
 import Divider from "@material-ui/core/Divider";
@@ -22,6 +23,7 @@ import RequestsPopper from "./RequestsPopper";
 import DatabaseHandler from "../../../Database";
 import createNode, { receiveData, sendData } from "../../../ConnectionV2/Bundle";
 import Loader from "../../Components/Loader";
+import User from "../../../Database/Schemas/User";
 
 const drawerWidth = 240;
 
@@ -74,17 +76,64 @@ function Dashboard() {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   // TODO: show a message or something if not connected to a peer
-  const [isConnectedToPeer, setIsConnectedToPeer] = useState(false);
+  const [isConnectedToPeers, setIsConnectedToPeer] = useState(false);
   const [ownNode, setOwnNode] = useState(null);
 
-  const handleNetworkJoin = () => setIsConnectedToPeer(true);
 
   /** INITIALIZE NODE */
   useEffect(() => {
+    function updateContact(contactId, fields) {
+      setContacts(previousContacts => {
+        const contactIndex = previousContacts.findIndex(e => e.id === contactId);
+
+        // node is a contact
+        if (contactIndex !== -1) {
+          const newContacts = [...previousContacts];
+
+          /** @type {User} */
+          const connectedContact = newContacts[contactIndex];
+
+          Object.assign(connectedContact, fields);
+
+          // don't use the same reference
+          return newContacts;
+        }
+
+        return previousContacts;
+      });
+    }
+
+    /**
+     *
+     * @param {PeerInfo} contactPeerInfo
+     * @param {boolean} newConnectionStatus
+     */
+    function updateContactConnectionStatus(contactPeerInfo, newConnectionStatus) {
+      if (newConnectionStatus) {
+        setIsConnectedToPeer(true);
+      }
+
+      updateContact(
+        contactPeerInfo.id.toB58String(),
+        {
+          isConnected: newConnectionStatus,
+          peerInfo: contactPeerInfo,
+        },
+      );
+    }
+
+    async function handlePeerConnect(node, peerInfo) {
+      // this should be done automatically by libp2p
+      // but it's not
+      await node._dht._add(peerInfo);
+
+      updateContactConnectionStatus(peerInfo, true);
+    }
+
     async function handleAddProtocol({ connection, stream }) {
       // TODO: is this concurrent safe?
+      // TODO: do we need to close the connection? how about on a refuse? or after final response?
       const id = connection.remotePeer.toB58String();
 
       try {
@@ -139,9 +188,12 @@ function Dashboard() {
                 // just accept the request
                 await acceptRequest(id, request.username);
 
+                const user = new User(id, request.username);
+                user.isConnected = true;
+
                 setContacts(prevContacts => ([
                   ...prevContacts,
-                  { id, username: request.username },
+                  user,
                 ]));
 
                 setSentRequests(prevRequests => prevRequests.filter(e => e.id !== id));
@@ -176,6 +228,70 @@ function Dashboard() {
       }
     }
 
+    async function handleChatProtocol(node, { connection, stream }) {
+      console.log("new chat connection");
+      const database = DatabaseHandler.getDatabase();
+      const user = await database.users.get({ id: connection.remotePeer.toB58String() });
+
+      if (!user) {
+        // TODO: do we close the connection afther the message?
+        await sendData(stream.sink, ["REFUSED"]);
+
+        // TODO: is ok?
+        await node.hangUp(connection.remotePeer);
+      } else {
+        try {
+          const data = await receiveData(stream.source);
+
+
+          if (data.length) {
+            // TODO: use message class
+            // TODO: parse the message to ensure structure
+            const messages = data.map(message => JSON.parse(message))
+              .map(message => ({
+                // TODO: handle images, maps, etc...
+                ...message,
+                receivedDate: moment().toDate(),
+                ownerId: user.id,
+                status: "received", // TODO move to an enum
+              }));
+
+            console.log("saving messages");
+            console.log(messages);
+
+            let unread = 0;
+
+            await database.transaction("rw", database.messages, async () => {
+              await database.messages.bulkAdd(messages);
+
+              unread = await database.messages.where("status").equals("received").count();
+            });
+
+
+            updateContact(
+              user.id,
+              {
+                chatItem: {
+                  // avatar={'https://facebook.github.io/react/img/logo.svg'}
+                  // alt={'Reactjs'}
+                  title: user.username,
+                  subtitle: messages[messages.length - 1].data,
+                  date: messages[messages.length - 1].receivedDate,
+                  unread,
+                },
+              },
+            );
+          } else {
+            // TODO throw MessageIsNullException or something
+          }
+        } catch (error) {
+          // TODO
+          console.log(error);
+          console.log(error.message);
+        }
+      }
+    }
+
     async function getOwnNode() {
       try {
         const database = DatabaseHandler.getDatabase();
@@ -186,18 +302,14 @@ function Dashboard() {
         const peerId = await PeerId.createFromJSON(peerIdJSON);
         const node = await createNode(peerId);
 
-        node.on("peer:connect", async (peerInfo) => {
-          // this should be done automatically by libp2p
-          // but it's not
-          await node._dht._add(peerInfo);
-          handleNetworkJoin();
-        });
-
+        node.on("peer:connect", (peerInfo) => handlePeerConnect(node, peerInfo));
+        node.on("peer:disconnect", (peerInfo) => updateContactConnectionStatus(peerInfo, false));
         node.handle("/add/1.0.0", handleAddProtocol); // TODO gestion this better
+        node.handle("/chat/1.0.0", (connectionData) => handleChatProtocol(node, connectionData));
+
         await node.start();
 
         setOwnNode(node);
-        setIsLoading(false);
       } catch (error) {
         // todo: catch DatabaseHandler.getDatabase() errors
         console.error(error);
@@ -205,8 +317,10 @@ function Dashboard() {
       }
     }
 
-    getOwnNode();
-  }, []);
+    if (!ownNode) {
+      getOwnNode();
+    }
+  }, [ownNode]);
 
   /** LOAD DATABASE DATA */
   useEffect(() => {
@@ -217,18 +331,6 @@ function Dashboard() {
         const userId = localStorage.getItem("id");
         /** @type {Array<User>} */
         const users = await database.users.where("id").notEqual(userId).toArray();
-
-        // TODO: can we make this work with Promise.all? look if the singleton can handle it
-        for (const user of users) {
-          const peerId = PeerId.createFromB58String(user.id);
-
-          if (ownNode && isConnectedToPeer) {
-            user.peerInfo = await ownNode.peerRouting.findPeer(peerId);
-
-            // TODO dial to get stream! crash when no connections
-          }
-        }
-
 
         /** @type {Object[]} */
         const requests = await database.requests.toArray();
@@ -244,8 +346,7 @@ function Dashboard() {
     }
 
     getDatabaseData();
-  }, [ownNode, isConnectedToPeer]);
-
+  }, []);
 
   const handleAddContact = async (contactUsername) => {
     // TODO redial for peers we have the id but didn't found!
@@ -372,8 +473,38 @@ function Dashboard() {
     }
   }
 
+  /**
+   *
+   * @param {String }id
+   * @param {String} message
+   * @return {Promise<void>}
+   */
+  async function sendTextMessage(id, message) {
+    if (message) {
+      try {
+        const structuredMessage = {
+          type: "TEXT",
+          data: message,
+          sentDate: moment().toDate(),
+        };
+
+        const peerId = PeerId.createFromB58String(id);
+        // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
+        const { stream } = await ownNode.dialProtocol(peerId, "/chat/1.0.0"); // todo: works withouth info?
+
+        const data = JSON.stringify(structuredMessage);
+
+        await sendData(stream.sink, [data]);
+      } catch (error) {
+        // TODO
+        console.log(error);
+        console.log(error.message);
+      }
+    }
+  }
+
   return (
-    <Loader isLoading={isLoading}>
+    <Loader isLoading={!ownNode}>
       <Drawer
         className={classes.drawer}
         variant="permanent"
@@ -384,7 +515,7 @@ function Dashboard() {
       >
 
         <div className={classes.userItems}>
-          <UserAvatar username={username} />
+          <UserAvatar username={username} showBadge isOnline={isConnectedToPeers} />
           <IconButton
             aria-label="receivedRequests"
             color="primary"
@@ -427,7 +558,7 @@ function Dashboard() {
       </Drawer>
 
       {/* TODO add something */}
-      {selectedContact ? <ContactPage selectedContact={selectedContact} /> : "TODO"}
+      {selectedContact ? <ContactPage selectedContact={selectedContact} sendTextMessage={sendTextMessage} /> : "TODO"}
 
 
       <AddContactDialog

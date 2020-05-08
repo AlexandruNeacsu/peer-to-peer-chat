@@ -66,6 +66,8 @@ export default async function createNode(id) {
  * @param {String[]} data
  */
 export async function sendData(sink, data) {
+  // TODO: handle single object
+  // TODO: handle array of objects(stringify)
   return pipe(
     data,
     lp.encode(),
@@ -85,8 +87,8 @@ export async function receiveData(source) {
     async (data) => {
       const messages = [];
 
-      for await (const message of data) {
-        messages.push(message.toString());
+      for await (const chunk of data) {
+        messages.push(chunk.toString());
       }
 
       return messages;

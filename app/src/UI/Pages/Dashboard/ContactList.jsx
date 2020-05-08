@@ -2,12 +2,16 @@ import React from "react";
 import ListItem from "@material-ui/core/ListItem";
 import UserAvatar from "../../Components/UserAvatar";
 
-
-export default function ContactList({ contacts, setSelectedFriend}) {
+/**
+ *
+ * @param {User[]} contacts
+ * @param {function} setSelectedContact
+ */
+export default function ContactList({ contacts, setSelectedContact }) {
   // TODO: online status
-  return contacts.map(({ username, avatar }) => (
-    <ListItem button key={username}>
-      <UserAvatar username={username} image={avatar} />
+  return contacts.map(contact => (
+    <ListItem button key={contact.username} onClick={() => setSelectedContact(contact)}>
+      <UserAvatar username={contact.username} image={contact.avatar} showBadge isOnline={contact.isConnected} />
     </ListItem>
   ));
 }

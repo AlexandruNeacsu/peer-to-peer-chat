@@ -75,9 +75,9 @@ const DatabaseHandler = {
     // TODO: allow only one user with local === true
 
     // stores and indexes
-    _database.version(1).stores({
+    _database.version(2).stores({
       users: "id, username", // TODO refine, and move to the same folder as the class
-      messages: "++id, ownerId", // TODO
+      messages: "++id, ownerId, date, status", // TODO
       requests: "id",
     });
 
