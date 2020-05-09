@@ -45,7 +45,8 @@ function formatMessage(message) {
     replyButton: true,
     type: "text",
     theme: "white",
-    title: message.partnerUsername,
+    // TODO: dont use localstorage
+    title: localStorage.getItem("id") === message.senderId ? localStorage.getItem("username") : message.partnerUsername,
     // titleColor: this.getRandomColor(), // TODO add to user
     text: message.data,
     status: message.status,
@@ -104,7 +105,6 @@ export default function ContactPage({ selectedContact, sendTextMessage }) {
           ...prevMessages,
           ...messages.map(msg => formatMessage(msg)),
         ]
-        // .sort((a, b) => b.id - a.id) // reverse sort
       ));
     };
 
@@ -161,7 +161,6 @@ export default function ContactPage({ selectedContact, sendTextMessage }) {
   };
 
 
-  console.log(messageList)
   // TODO trimite mesaj cand apasam enter
   return (
     <div className={classes.content}>

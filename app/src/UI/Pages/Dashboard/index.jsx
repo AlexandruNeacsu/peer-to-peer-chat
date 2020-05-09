@@ -241,7 +241,6 @@ function Dashboard() {
     }
 
     async function handleChatProtocol(node, { connection, stream }) {
-      console.log("new chat connection");
       const database = DatabaseHandler.getDatabase();
       const user = await database.users.get({ id: connection.remotePeer.toB58String() });
 
@@ -256,8 +255,6 @@ function Dashboard() {
           const data = await receiveData(stream.source);
 
           if (data.length) {
-            const isNotSameUser = !selectedContact || (selectedContact.id !== user.id);
-
             // TODO: use message class
             // TODO: parse the message to ensure structure
             const messages = data.map(message => JSON.parse(message))
@@ -268,12 +265,9 @@ function Dashboard() {
                 partnerId: user.id,
                 partnerUsername: user.username, // TODO: this will show old username in chat history
                 senderId: user.id,
-                status: isNotSameUser ? "received" : "read", // TODO move to an enum
+                status: "received", // TODO move to an enum
               }));
 
-            console.log(selectedContact)
-            console.log(user)
-            console.log(isNotSameUser)
 
             const chatItem = {
               title: user.username,
@@ -286,12 +280,10 @@ function Dashboard() {
             await database.transaction("rw", database.users, database.conversations, async () => {
               await database.conversations.bulkAdd(messages);
 
-              if (isNotSameUser) {
-                chatItem.unread = await database.conversations.where({
-                  status: "received",
-                  partnerId: user.id,
-                }).count();
-              }
+              chatItem.unread = await database.conversations.where({
+                status: "received",
+                partnerId: user.id,
+              }).count();
 
               await database.users.put({ ...user, chatItem });
             });
@@ -507,8 +499,8 @@ function Dashboard() {
     }
   }
 
-  async function handleSelectContact(contact) {
-    if (!selectedContact || (contact.id !== selectedContact.id)) {
+  async function handleSelectContact(newContact) {
+    async function setMessagesStatus(contact) {
       try {
         const updatedContact = await updateContact(
           setContacts,
@@ -521,28 +513,43 @@ function Dashboard() {
           },
         );
 
-        setSelectedContact(contact);
-
         const database = DatabaseHandler.getDatabase();
+        await database.transaction("rw", database.users, database.conversations, async () => {
+          // can't use modify, will corupt data (BUG)
+          const conversations = await database.conversations
+            .where({
+              status: "received",
+              partnerId: contact.id,
+            })
+            .toArray();
 
-        // await database.transaction("rw", database.users, database.conversations, async () => {
-        //   await database.conversations
-        //     .where({
-        //       status: "received",
-        //       partnerId: updatedContact.id,
-        //     })
-        //     .modify(conversation => {
-        //       console.log(conversation);
-        //       conversation.status = "read";
-        //     });
-        //   await database.users.put(updatedContact.export());
-        // });
+          conversations.forEach(e => {
+            e.status = "read";
+          });
+
+          await database.conversations.bulkPut(conversations);
+          await database.users.put(updatedContact.export());
+        });
       } catch (error) {
         // TODO
         console.log(error);
         console.log(error.message);
       }
     }
+
+    newContact.on("messages", () => setMessagesStatus(newContact));
+
+    if (newContact.chatItem.unread && (!selectedContact || (newContact.id !== selectedContact.id))) {
+      await setMessagesStatus(newContact, "read");
+    }
+
+    setSelectedContact(prevContact => {
+      if (prevContact) {
+        prevContact.removeAllListeners("messages");
+      }
+
+      return newContact;
+    });
   }
 
   /**
@@ -611,8 +618,6 @@ function Dashboard() {
     return null;
   }
 
-
-  console.log(selectedContact)
   return (
     <Loader isLoading={!ownNode}>
       <Drawer
