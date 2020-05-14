@@ -1,11 +1,9 @@
 import React from "react";
-import ListItem from "@material-ui/core/ListItem";
+import { ChatList } from "react-chat-elements-alex";
 import UserAvatar from "../../Components/UserAvatar";
 
-import "react-chat-elements/dist/main.css";
-// import ChatList from "./ChatList/ChatList";
+import "react-chat-elements-alex/dist/main.css";
 
-import { ChatList } from "react-chat-elements-alex";
 
 /**
  *

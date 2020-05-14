@@ -5,7 +5,7 @@ import PeerInfo from "peer-info";
 import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Auth from "./UI/Pages/Auth";
-import Dashboard from "./UI/Pages/Dashboard";
+import Dashboard from "./UI/Pages/Dashboard/Dashboard";
 import DatabaseHandler from "./Database";
 import Loader from "./UI/Components/Loader";
 import axios from "axios";

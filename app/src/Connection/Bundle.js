@@ -1,8 +1,7 @@
 import Libp2p from "libp2p";
 import WebRTCStar from "libp2p-webrtc-star";
-import WS from "libp2p-websockets";
 import SECIO from "libp2p-secio";
-import MPLEX from "libp2p-mplex";
+import Mplex from "libp2p-mplex";
 import DHT from "libp2p-kad-dht";
 import PeerInfo from "peer-info";
 import pipe from "it-pipe";
@@ -12,30 +11,32 @@ class PeerNode extends Libp2p {
   constructor(peerInfo) {
     const modules = {
       peerInfo,
-      transport: [WS, WebRTCStar], // TODO: do we need WS?
+      transport: [WebRTCStar], // TODO: do we need WS?
       connEncryption: [SECIO],
-      streamMuxer: [MPLEX],
+      streamMuxer: [Mplex],
       dht: DHT,
-      config: {
-        peerDiscovery: {
-          webRTCStar: {
-            enabled: true,
-          },
-        },
-        dht: {
-          kBucketSize: 20, // TODO
+    };
+
+    const config = {
+      peerDiscovery: {
+        webRTCStar: {
           enabled: true,
-          randomWalk: {
-            enabled: true,
-            interval: 300e3,
-            timeout: 10e3,
-          },
+        },
+      },
+      dht: {
+        kBucketSize: 20, // TODO
+        enabled: true,
+        randomWalk: {
+          enabled: true,
+          interval: 300e3,
+          timeout: 10e3,
         },
       },
     };
 
     super({
       modules,
+      config,
       peerInfo,
     });
 
@@ -63,7 +64,7 @@ export default async function createNode(id) {
 /**
  * Send data to a sink
  * @param sink
- * @param {String[]} data
+ * @param {String[] | ArrayBuffer} data
  */
 export async function sendData(sink, data) {
   // TODO: handle single object
@@ -78,6 +79,7 @@ export async function sendData(sink, data) {
 /**
  *
  * @param source
+ * @param {AsyncIterator} source
  * @returns {Promise<String[]>}
  */
 export async function receiveData(source) {
@@ -88,7 +90,7 @@ export async function receiveData(source) {
       const messages = [];
 
       for await (const chunk of data) {
-        messages.push(chunk.toString());
+        messages.push(chunk);
       }
 
       return messages;

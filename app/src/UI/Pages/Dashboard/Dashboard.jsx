@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PeerId from "peer-id";
 import { t } from "react-i18nify";
-import moment from "moment/moment";
+import pushable from "it-pushable";
 import { makeStyles } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
 import Divider from "@material-ui/core/Divider";
@@ -21,11 +21,13 @@ import ContactPage from "./ContactPage";
 import AddContactDialog from "./AddContactDialog";
 import RequestsPopper from "./RequestsPopper";
 import DatabaseHandler from "../../../Database";
-import createNode, { receiveData, sendData } from "../../../ConnectionV2/Bundle";
+import createNode, { receiveData, sendData } from "../../../Connection/Bundle";
 import Loader from "../../Components/Loader";
 import User from "../../../Database/Schemas/User";
 
+
 const drawerWidth = 240;
+const MAX_CHAT_ITEM_SUBTITLE = 15;
 
 const useStyles = makeStyles(theme => ({
   drawer: {
@@ -97,6 +99,8 @@ function updateContact(setContacts, contactId, fields) {
     });
   });
 }
+
+const FILE_PARTS = {};
 
 function Dashboard() {
   const classes = useStyles();
@@ -255,46 +259,131 @@ function Dashboard() {
           const data = await receiveData(stream.source);
 
           if (data.length) {
-            // TODO: use message class
-            // TODO: parse the message to ensure structure
-            const messages = data.map(message => JSON.parse(message))
-              .map(message => ({
-                // TODO: handle images, maps, etc...
-                ...message,
-                receivedDate: moment().toDate(),
-                partnerId: user.id,
-                partnerUsername: user.username, // TODO: this will show old username in chat history
-                senderId: user.id,
-                status: "received", // TODO move to an enum
-              }));
+            const structuredMessages = [];
 
+            const initialMessage = JSON.parse(data.shift().toString());
 
             const chatItem = {
               title: user.username,
-              subtitle: messages[messages.length - 1].data,
-              date: messages[messages.length - 1].receivedDate,
+              date: new Date(),
               unread: 0,
             };
 
+            switch (initialMessage.type) {
+              case "TEXT": {
+                // TODO: use message class
+                // TODO: parse the message to ensure structure
+                const message = {
+                  type: initialMessage.type,
+                  sentDate: initialMessage.sentDate,
+                  text: initialMessage.text,
+                  receivedDate: chatItem.date,
+                  partnerId: user.id,
+                  partnerUsername: user.username, // TODO: this will show old username in chat history
+                  senderId: user.id,
+                  status: "received", // TODO move to an enum
+                };
 
-            await database.transaction("rw", database.users, database.conversations, async () => {
-              await database.conversations.bulkAdd(messages);
+                structuredMessages.push(message);
 
-              chatItem.unread = await database.conversations.where({
-                status: "received",
-                partnerId: user.id,
-              }).count();
+                chatItem.subtitle = message.text.slice(0, MAX_CHAT_ITEM_SUBTITLE);
 
-              await database.users.put({ ...user, chatItem });
-            });
+                break;
+              }
+              case "FILE": {
+                if (FILE_PARTS[initialMessage.file.name]) {
+                  if (!initialMessage.final) {
+                    FILE_PARTS[initialMessage.file.name]
+                      .data
+                      .push(data.shift().slice());
+                  } else {
+                    const parts = FILE_PARTS[initialMessage.file.name].data;
+                    // Get the total length of all arrays.
+                    let length = 0;
+                    parts.forEach(item => {
+                      length += item.length;
+                    });
 
-            /**
-             * @type {User}
-             */
-            const contact = await updateContact(setContacts, user.id, { chatItem });
+                    const mergedArray = new Uint8Array(length);
+                    let offset = 0;
+                    parts.forEach(item => {
+                      mergedArray.set(item, offset);
+                      offset += item.length;
+                    });
 
-            if (contact) {
-              contact.handleMessages(messages);
+                    delete FILE_PARTS[initialMessage.file.name];
+
+                    structuredMessages.push({
+                      type: initialMessage.file.type,
+                      file: {
+                        name: initialMessage.file.name,
+                        type: initialMessage.file.type,
+                        data: mergedArray,
+                      },
+                      sentDate: initialMessage.sentDate,
+                      receivedDate: new Date(),
+                      partnerId: user.id,
+                      partnerUsername: user.username, // TODO: this will show old username in chat history
+                      senderId: user.id,
+                      status: "received", // TODO move to an enum
+                    });
+
+
+                    if (initialMessage.text) {
+                      // TODO: check if type is String
+                      const textMessage = {
+                        type: "TEXT",
+                        sentDate: initialMessage.sentDate,
+                        text: initialMessage.text,
+                        receivedDate: new Date(),
+                        partnerId: user.id,
+                        partnerUsername: user.username, // TODO: this will show old username in chat history
+                        senderId: user.id,
+                        status: "received", // TODO move to an enum
+                      };
+
+                      structuredMessages.push(textMessage);
+
+                      chatItem.subtitle = initialMessage.text.slice(0, MAX_CHAT_ITEM_SUBTITLE);
+                    } else {
+                      chatItem.subtitle = "POZA TODO"; // TODO
+                    }
+                  }
+                } else {
+                  FILE_PARTS[initialMessage.file.name] = {
+                    name: initialMessage.file.name,
+                    type: initialMessage.file.type,
+                    data: [data.shift().slice()],
+                  };
+                }
+
+                break;
+              }
+              default:
+                // TODO throw
+                break;
+            }
+
+            if (structuredMessages.length) {
+              await database.transaction("rw", database.users, database.conversations, async () => {
+                await database.conversations.bulkAdd(structuredMessages);
+
+                chatItem.unread = await database.conversations.where({
+                  status: "received",
+                  partnerId: user.id,
+                }).count();
+
+                await database.users.put({ ...user, chatItem });
+              });
+
+              /**
+               * @type {User}
+               */
+              const contact = await updateContact(setContacts, user.id, { chatItem });
+
+              if (contact) {
+                contact.handleMessages(structuredMessages);
+              }
             }
           } else {
             // TODO throw MessageIsNullException or something
@@ -321,11 +410,18 @@ function Dashboard() {
         node.on("peer:connect", async (peerInfo) => {
           // this should be done automatically by libp2p
           // but it's not
-          await node._dht._add(peerInfo);
+          await node.dial(peerInfo);
+          // await node._dht._add(peerInfo);
+
 
           await updateContactConnectionStatus(peerInfo, true);
         });
         node.on("peer:disconnect", (peerInfo) => updateContactConnectionStatus(peerInfo, false));
+        node.on("error", (err) => {
+          console.log(err);
+          console.log(err.message);
+        });
+
         node.handle("/add/1.0.0", handleAddProtocol); // TODO gestion this better
         node.handle("/chat/1.0.0", (connectionData) => handleChatProtocol(node, connectionData));
 
@@ -424,7 +520,7 @@ function Dashboard() {
         if (message === "REGISTERED") {
           // TODO set snackbar to succesful
 
-          await database.requests.add({ ...contact.export(), sent: true });
+          await database.requests.add({ ...contact.export(), sent: true }); // TODO: wouldn't contact id clash with request id?
           setSentRequests(prevValues => ([...prevValues, contact]));
         } else if (message === "ACCEPTED") {
           await database.users.add(contact.export());
@@ -559,22 +655,19 @@ function Dashboard() {
    * @return {Promise<{sentDate: Date, senderId: string, data: *, partnerUsername: string, partnerId: String, type: string, status: string}>}
    */
   async function sendTextMessage(user, text) {
-    if (text) {
+    if (user && text) {
       try {
         const message = {
           type: "TEXT",
-          data: text,
-          sentDate: moment().toDate(),
+          sentDate: new Date(), // TODO: repalce with new Date() ?
+          text,
         };
 
         const peerId = PeerId.createFromB58String(user.id);
         // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
         const { stream } = await ownNode.dialProtocol(peerId, "/chat/1.0.0"); // todo: works withouth info?
 
-        const data = JSON.stringify(message);
-
-        await sendData(stream.sink, [data]);
-
+        await sendData(stream.sink, [JSON.stringify(message)]);
 
         const structuredMessage = {
           // TODO: handle images, maps, etc...
@@ -585,21 +678,20 @@ function Dashboard() {
           status: "sent", // TODO move to an enum && handle wainting status(before sending with sendData)
         };
 
-        const database = DatabaseHandler.getDatabase();
-
         const contact = await updateContact(
           setContacts,
           user.id,
           {
             chatItem: {
               title: user.username,
-              subtitle: text,
+              subtitle: text.slice(0, MAX_CHAT_ITEM_SUBTITLE),
               date: message.sentDate,
               unread: 0, // sanity check
             },
           },
         );
 
+        const database = DatabaseHandler.getDatabase();
         await database.transaction("rw", database.users, database.conversations, async () => {
           await database.conversations.add(structuredMessage);
           await database.users.put(contact.export());
@@ -615,6 +707,113 @@ function Dashboard() {
       }
     }
 
+    return null;
+  }
+
+  /**
+   *
+   * @param {User} user
+   * @param {Uint8Array} file
+   * @param {String} text
+   * @return {Promise<{senderId: string, partnerUsername: *, partnerId: *, status: string}>}
+   */
+  async function sendFile(user, file, text) {
+    // TODO: maybe combine sendFunctions
+    if (user && file) {
+      try {
+        const peerId = PeerId.createFromB58String(user.id);
+
+        // TODO check files format {file: FILE, text: String}
+        const initialMessage = {
+          type: "FILE",
+          file: {
+            name: file.name,
+            type: file.type === "image" ? "PHOTO" : "FILE",
+          },
+        };
+
+        for (let i = 0; i < file.data.length; i += 200_000) {
+          // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
+          const { stream } = await ownNode.dialProtocol(peerId, "/chat/1.0.0"); // todo: works withouth info?
+
+          const source = pushable();
+          source.push(JSON.stringify(initialMessage));
+          source.push(file.data.slice(i, i + 200_000));
+          source.end();
+
+          await sendData(stream.sink, source);
+        }
+
+        // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
+        const { stream } = await ownNode.dialProtocol(peerId, "/chat/1.0.0"); // todo: works withouth info?
+
+        // TODO check files format {file: FILE, text: String}
+        const finalMessage = {
+          type: "FILE",
+          final: true,
+          text,
+          sentDate: new Date(),
+          file: {
+            name: file.name,
+            type: file.type === "image" ? "PHOTO" : "FILE",
+          },
+        };
+
+        await sendData(stream.sink, [JSON.stringify(finalMessage)]);
+
+
+        const structuredMessages = [{
+          type: finalMessage.file.type,
+          sentDate: finalMessage.sentDate,
+          partnerId: user.id,
+          partnerUsername: user.username, // TODO: will show old username in chat history
+          senderId: localStorage.getItem("id"),
+          status: "sent", // TODO move to an enum && handle wainting status(before sending with sendData)
+          file,
+        }];
+
+        if (text) {
+          const textMessage = {
+            type: "TEXT",
+            sentDate: finalMessage.sentDate,
+            partnerId: user.id,
+            partnerUsername: user.username, // TODO: will show old username in chat history
+            senderId: localStorage.getItem("id"),
+            status: "sent", // TODO move to an enum && handle wainting status(before sending with sendData)
+            text,
+          };
+
+          structuredMessages.push(textMessage);
+        }
+
+        const contact = await updateContact(
+          setContacts,
+          user.id,
+          {
+            chatItem: {
+              title: user.username,
+              subtitle: text || "POZA TODO",
+              date: finalMessage.sentDate,
+              unread: 0, // sanity check
+            },
+          },
+        );
+
+        const database = DatabaseHandler.getDatabase();
+        await database.transaction("rw", database.users, database.conversations, async () => {
+          await database.conversations.bulkAdd(structuredMessages);
+          await database.users.put(contact.export());
+        });
+
+        return structuredMessages;
+      } catch (error) {
+        // TODO, maybe try to resend, show disconnected, etc
+        console.log(error);
+        console.log(error.message);
+
+        return null;
+      }
+    }
     return null;
   }
 
@@ -678,7 +877,8 @@ function Dashboard() {
           ? (
             <ContactPage
               selectedContact={selectedContact}
-              sendTextMessage={sendTextMessage}
+              sendText={sendTextMessage}
+              sendFile={sendFile}
             />
           )
           : "TODO"
