@@ -4,41 +4,17 @@ import axios from "axios";
 import PeerId from "peer-id";
 import pushable from "it-pushable";
 import SimplePeer from "simple-peer";
-import { makeStyles } from "@material-ui/core/styles";
-import Drawer from "@material-ui/core/Drawer";
-import Divider from "@material-ui/core/Divider";
-import IconButton from "@material-ui/core/IconButton";
-import CallIcon from "@material-ui/icons/Call";
-import GroupIcon from "@material-ui/icons/Group";
-import Badge from "@material-ui/core/Badge";
-import UserAvatar from "../../Components/UserAvatar";
-import ContactList from "./ContactList";
-import ContactPage from "./ContactPage";
+import ContactPage from "../ContactPage";
 import AddContactDialog from "./AddContactDialog";
-import RequestsPopper from "./RequestsPopper";
+import RequestsPopper from "../Sidebar/RequestsPopper";
 import DatabaseHandler from "../../../Database";
 import createNode, { receiveData, sendData } from "../../../Connection/Bundle";
 import Loader from "../../Components/Loader";
 import User from "../../../Database/Schemas/User";
+import Sidebar from "../Sidebar";
 
 
-const drawerWidth = 280;
 const MAX_CHAT_ITEM_SUBTITLE = 15;
-
-const useStyles = makeStyles(theme => ({
-  drawer: {
-    width: drawerWidth,
-    flexShrink: 0,
-  },
-  drawerPaper: {
-    width: drawerWidth,
-  },
-  toolbar: theme.mixins.toolbar,
-  userItems: {
-    display: "flex",
-    justifyContent: "space-between",
-  },
-}));
 
 /**
  *
@@ -146,12 +122,9 @@ async function call(node, user) {
 
 const FILE_PARTS = {};
 
-function Dashboard() {
-  const classes = useStyles();
-
-
+function Chat() {
   // TODO clean this mess
-  const [username] = useState(localStorage.getItem("username"));
+  const [username, setUsername] = useState(localStorage.getItem("username"));
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -912,48 +885,17 @@ function Dashboard() {
 
   return (
     <Loader isLoading={!ownNode}>
-      <Drawer
-        className={classes.drawer}
-        variant="permanent"
-        classes={{
-          paper: classes.drawerPaper,
-        }}
-        anchor="left"
-      >
-
-        <div className={classes.userItems}>
-          <UserAvatar username={username} isOnline={isConnectedToPeers} showBadge showUsername />
-          <IconButton
-            aria-label="receivedRequests"
-            color="primary"
-            onClick={event => setAnchorEl(prevValue => (prevValue ? null : event.currentTarget))}
-          >
-            <Badge badgeContent={receivedRequests.length + sentRequests.length} color="primary">
-              <GroupIcon />
-            </Badge>
-          </IconButton>
-
-          <IconButton
-            aria-label="receivedRequests"
-            color="primary"
-            onClick={() => call(ownNode, selectedContact)}
-          >
-            <CallIcon />
-          </IconButton>
-        </div>
-
-        <video id="video" width="128" height="128" autoPlay />
-
-        {/* <div className={classes.toolbar} /> */}
-        <Divider />
-
-        <ContactList
-          contacts={contacts}
-          setSelectedContact={handleSelectContact}
-          handleAdd={() => setModalOpen(true)}
-        />
-
-      </Drawer>
+      <Sidebar
+        username={username}
+        isOnline={isConnectedToPeers}
+        contacts={contacts}
+        handleAcceptRequest={handleAcceptRequest}
+        handleRejectRequest={handleRejectRequest}
+        onAddContact={() => setModalOpen(true)}
+        handleSelectContact={handleSelectContact}
+        receivedRequests={receivedRequests}
+        sentRequests={sentRequests}
+      />
 
       {/* TODO add something */}
       {
@@ -992,4 +934,4 @@ function Dashboard() {
 //   signalSocket: PropTypes.instanceOf()
 // };
 
-export default Dashboard;
+export default Chat;

@@ -52,7 +52,7 @@ const useStyles = makeStyles(theme => ({
   chatItem: {
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
+    alignItems: "flex-end",
     justifyItems: "center",
     paddingRight: theme.spacing(1),
     marginTop: theme.spacing(0.75),
@@ -61,6 +61,7 @@ const useStyles = makeStyles(theme => ({
   chatItemUnread: {
     height: theme.spacing(0.25),
     marginTop: theme.spacing(1),
+    marginRight: theme.spacing(1),
     display: "flex",
   },
   chatItemDate: {
@@ -74,7 +75,7 @@ const useStyles = makeStyles(theme => ({
  * @param {function} setSelectedContact
  * @param {function} handleAdd TODO rename, we are not adding, just opening a modal
  */
-export default function ContactList({ contacts, setSelectedContact, handleAdd }) {
+export default function ContactList({ contacts, setSelectedContact, onAdd }) {
   const classes = useStyles();
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [filter, setFilter] = useState("");
@@ -99,7 +100,7 @@ export default function ContactList({ contacts, setSelectedContact, handleAdd })
         <Typography variant="h3" color="textPrimary">
           {t("Contacts.Add")}
         </Typography>
-        <IconButton className={classes.contactAddButton} onClick={handleAdd}>
+        <IconButton className={classes.contactAddButton} onClick={onAdd}>
           <PersonAddIcon />
         </IconButton>
       </div>

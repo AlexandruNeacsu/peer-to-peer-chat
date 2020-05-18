@@ -7,7 +7,7 @@ import { t } from "react-i18nify";
 import { ThemeProvider } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Auth from "./UI/Pages/Auth";
-import Dashboard from "./UI/Pages/Dashboard/Dashboard";
+import Chat from "./UI/Pages/Chat/Chat";
 import DatabaseHandler from "./Database";
 import Loader from "./UI/Components/Loader";
 import Snackbar from "./UI/Components/Snackbar";
@@ -101,7 +101,7 @@ function App() {
             <Switch>
               <Route exact path="/">
                 <Loader isLoading={isLoading}>
-                  <Dashboard />
+                  <Chat />
                 </Loader>
               </Route>
               <Route path="*">

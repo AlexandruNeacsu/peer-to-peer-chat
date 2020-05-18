@@ -6,7 +6,7 @@ import Typography from "@material-ui/core/Typography";
 import { TextField, IconButton } from "@material-ui/core";
 import SendIcon from "@material-ui/icons/Send";
 import { MessageList } from "react-chat-elements";
-import DatabaseHandler from "../../../../Database";
+import DatabaseHandler from "../../../Database";
 import UploadFile from "./UploadFile";
 
 import "react-chat-elements/dist/main.css";
