@@ -2,6 +2,10 @@ import { setTranslations, setLocale, addLocale } from "react-i18nify";
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import localeRo from "date-fns/locale/ro";
+import moment from "moment";
+
+import momentRo from "moment/locale/ro";
+
 
 import en from "./translations/en-US.json";
 import ro from "./translations/ro-RO.json";
@@ -20,4 +24,6 @@ export default function initializeI18n() {
 
   setTranslations({ en, ro });
   setLocale("ro");
+
+  moment.locale("ro", momentRo);
 }

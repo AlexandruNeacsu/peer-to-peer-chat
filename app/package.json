@@ -27,6 +27,7 @@
     "libp2p-webrtc-star": "^0.17.10",
     "libp2p-websockets": "^0.13.6",
     "material-ui-dropzone": "^3.0.0",
+    "moment": "^2.25.3",
     "multihashing-async": "^0.8.1",
     "peer-id": "^0.13.12",
     "peer-info": "^0.17.5",

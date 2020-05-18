@@ -17,6 +17,10 @@
       "Email": "Not a valid email adress!"
     }
   },
+  "Contacts": {
+    "Search": "Search contact",
+    "Add": "Add contact"
+  },
   "Errors": {
     "Required": "Field is required",
     "Pozitive": "The number must pe pozitve",

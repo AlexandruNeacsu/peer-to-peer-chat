@@ -26,6 +26,11 @@
       "Email": "Valoarea introdusă nu este o adresă validă de email!"
     }
   },
+  "Contacts": {
+    "Contacts": "Contacte",
+    "Search": "Cauta contact",
+    "Add": "Adauga contact"
+  },
   "Errors": {
     "Required": "Camp necesar",
     "Pozitive": "Numarul introdus trebuie sa fie pozitiv",

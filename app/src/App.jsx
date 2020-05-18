@@ -1,42 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Redirect, Route, Switch } from "react-router-dom";
+import axios from "axios";
 import Dexie from "dexie";
 import PeerInfo from "peer-info";
-import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
+import { t } from "react-i18nify";
+import { ThemeProvider } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Auth from "./UI/Pages/Auth";
 import Dashboard from "./UI/Pages/Dashboard/Dashboard";
 import DatabaseHandler from "./Database";
 import Loader from "./UI/Components/Loader";
-import axios from "axios";
 import Snackbar from "./UI/Components/Snackbar";
-import { t } from "react-i18nify";
-
-
-const theme = createMuiTheme({
-  // palette: {
-  //   primary: {
-  //     light: "#54a75c",
-  //     main: "#2a9134",
-  //     dark: "#1d6524",
-  //   },
-  //   secondary: {
-  //     light: "#3b533e",
-  //     main: "#0b280e",
-  //     dark: "#071c09",
-  //   },
-  //   background: {
-  //     default: "#f7fdf8",
-  //   },
-  //   text: {
-  //     primary: "#061407",
-  //     light: "#f3fcf4",
-  //   },
-  //   typography: {
-  //     color: "#f3fcf4",
-  //   },
-  // },
-});
+import theme from "./UI/Theme";
 
 
 function App() {

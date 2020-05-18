@@ -2,19 +2,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PeerId from "peer-id";
-import { t } from "react-i18nify";
 import pushable from "it-pushable";
 import SimplePeer from "simple-peer";
 import { makeStyles } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
 import Divider from "@material-ui/core/Divider";
-import Autocomplete from "@material-ui/lab/Autocomplete";
-import TextField from "@material-ui/core/TextField";
-import List from "@material-ui/core/List";
-import { ListSubheader } from "@material-ui/core";
 import IconButton from "@material-ui/core/IconButton";
-import PersonAddIcon from "@material-ui/icons/PersonAdd";
-import CallIcon from '@material-ui/icons/Call';
+import CallIcon from "@material-ui/icons/Call";
 import GroupIcon from "@material-ui/icons/Group";
 import Badge from "@material-ui/core/Badge";
 import UserAvatar from "../../Components/UserAvatar";
@@ -27,7 +21,8 @@ import createNode, { receiveData, sendData } from "../../../Connection/Bundle";
 import Loader from "../../Components/Loader";
 import User from "../../../Database/Schemas/User";
 
-const drawerWidth = 240;
+
+const drawerWidth = 280;
 const MAX_CHAT_ITEM_SUBTITLE = 15;
 
 const useStyles = makeStyles(theme => ({
@@ -42,12 +37,6 @@ const useStyles = makeStyles(theme => ({
   userItems: {
     display: "flex",
     justifyContent: "space-between",
-  },
-  search: {
-    padding: theme.spacing(1),
-  },
-  contactAddButton: {
-    float: "right",
   },
 }));
 
@@ -120,7 +109,7 @@ async function call(node, user) {
 
       console.log(videoStream)
 
-      const peer = new SimplePeer({ initiator: true, stream: videoStream, trickle: false});
+      const peer = new SimplePeer({ initiator: true, stream: videoStream, trickle: false });
 
       peer.on("signal", async data => {
         await sendData(stream.sink, [JSON.stringify(data)]);
@@ -468,7 +457,7 @@ function Dashboard() {
         let signalData = await receiveData(stream.source);
         signalData = JSON.parse(signalData.shift().toString());
 
-        const peer = new SimplePeer({ initiator: false, trickle:false });
+        const peer = new SimplePeer({ initiator: false, trickle: false });
         peer.signal(signalData);
 
         peer.on("signal", async data => {
@@ -955,33 +944,14 @@ function Dashboard() {
 
         <video id="video" width="128" height="128" autoPlay />
 
-        {/* TODO incarca optiuni dupa ce user a scris cateva litere...  */}
-        <Autocomplete
-          className={classes.search}
-          id="free-solo-demo"
-          freeSolo
-          options={["asfas", "asfasf", "asfasfaf"]}
-          renderInput={params => (
-            <TextField {...params} label="freeSolo" margin="dense" />
-          )}
-        />
-
         {/* <div className={classes.toolbar} /> */}
         <Divider />
 
-        <List>
-          <ListSubheader>
-            {t("Contacts.AddContact")}
-            <IconButton className={classes.contactAddButton} onClick={() => setModalOpen(true)}>
-              <PersonAddIcon />
-            </IconButton>
-          </ListSubheader>
-
-          <ContactList
-            setSelectedContact={handleSelectContact}
-            contacts={contacts}
-          />
-        </List>
+        <ContactList
+          contacts={contacts}
+          setSelectedContact={handleSelectContact}
+          handleAdd={() => setModalOpen(true)}
+        />
 
       </Drawer>
 
