@@ -16,6 +16,7 @@
     "dexie": "^2.0.4",
     "dexie-encrypted": "^1.2.2",
     "formik": "^2.1.4",
+    "it-keepalive": "^1.2.0",
     "it-length-prefixed": "^3.0.1",
     "it-pipe": "^1.1.0",
     "it-pushable": "^1.4.0",
@@ -36,10 +37,11 @@
     "react-i18nify": "^3.1.6",
     "react-router-dom": "^5.1.2",
     "react-scripts": "3.4.0",
+    "simple-peer": "^9.7.2",
     "yup": "^0.28.5"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "HTTPS=true react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

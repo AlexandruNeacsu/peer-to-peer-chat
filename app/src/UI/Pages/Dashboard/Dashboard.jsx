@@ -4,6 +4,7 @@ import axios from "axios";
 import PeerId from "peer-id";
 import { t } from "react-i18nify";
 import pushable from "it-pushable";
+import SimplePeer from "simple-peer";
 import { makeStyles } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
 import Divider from "@material-ui/core/Divider";
@@ -13,8 +14,9 @@ import List from "@material-ui/core/List";
 import { ListSubheader } from "@material-ui/core";
 import IconButton from "@material-ui/core/IconButton";
 import PersonAddIcon from "@material-ui/icons/PersonAdd";
-import Badge from "@material-ui/core/Badge";
+import CallIcon from '@material-ui/icons/Call';
 import GroupIcon from "@material-ui/icons/Group";
+import Badge from "@material-ui/core/Badge";
 import UserAvatar from "../../Components/UserAvatar";
 import ContactList from "./ContactList";
 import ContactPage from "./ContactPage";
@@ -24,7 +26,6 @@ import DatabaseHandler from "../../../Database";
 import createNode, { receiveData, sendData } from "../../../Connection/Bundle";
 import Loader from "../../Components/Loader";
 import User from "../../../Database/Schemas/User";
-
 
 const drawerWidth = 240;
 const MAX_CHAT_ITEM_SUBTITLE = 15;
@@ -100,6 +101,60 @@ function updateContact(setContacts, contactId, fields) {
   });
 }
 
+async function call(node, user) {
+  // TODO: maybe combine sendFunctions
+  if (user) {
+    try {
+      // const peerId = PeerId.createFromB58String(user);
+
+      // const initialMessage = {
+      //   type: "CALL",
+      //   username: user.username,
+      // };
+
+      const { stream } = await node.dialProtocol(user.peerId, "/call/1.0.0"); // todo: works withouth info?
+      const videoStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      console.log(videoStream)
+
+      const peer = new SimplePeer({ initiator: true, stream: videoStream, trickle: false});
+
+      peer.on("signal", async data => {
+        await sendData(stream.sink, [JSON.stringify(data)]);
+        console.log("piped")
+
+        let signalData = await receiveData(stream.source);
+        console.log("received")
+
+        if (signalData.length) {
+          signalData = JSON.parse(signalData.shift().toString());
+          console.log(signalData)
+
+          peer.signal(signalData);
+        }
+      });
+
+      const video = document.querySelector("video");
+
+
+      if ("srcObject" in video) {
+        video.srcObject = videoStream;
+      } else {
+        video.src = window.URL.createObjectURL(videoStream); // for older browsers
+      }
+
+      await video.play();
+    } catch (error) {
+      // TODO, maybe try to resend, show disconnected, etc
+      console.log(error);
+      console.log(error.message);
+    }
+  }
+}
+
 const FILE_PARTS = {};
 
 function Dashboard() {
@@ -153,11 +208,11 @@ function Dashboard() {
         const database = DatabaseHandler.getDatabase();
 
         const messages = await receiveData(stream.source);
-        const message = messages.shift();
+        const message = messages.shift().toString();
 
         switch (message) {
           case "ADD": {
-            const request = { id, username: messages.shift() };
+            const request = { id, username: messages.shift().toString() };
 
             let status;
 
@@ -396,6 +451,53 @@ function Dashboard() {
       }
     }
 
+    async function handleCallProtocol(node, { connection, stream }) {
+      // const database = DatabaseHandler.getDatabase();
+      // const user = await database.users.get({ id: connection.remotePeer.toB58String() });
+
+      // if (!user) {
+      //   // TODO: do we close the connection afther the message?
+      //   await sendData(stream.sink, ["REFUSED"]);
+      //
+      //   // TODO: is ok?
+      //   await node.hangUp(connection.remotePeer);
+      // } else {
+      try {
+        console.log("answering");
+
+        let signalData = await receiveData(stream.source);
+        signalData = JSON.parse(signalData.shift().toString());
+
+        const peer = new SimplePeer({ initiator: false, trickle:false });
+        peer.signal(signalData);
+
+        peer.on("signal", async data => {
+          await sendData(stream.sink, [JSON.stringify(data)]);
+        });
+
+        peer.on("stream", videoStream => {
+          // got remote video stream, now let's show it in a video tag
+          const video = document.querySelector("video");
+
+          console.log("video")
+          console.log(videoStream)
+
+          if ("srcObject" in video) {
+            video.srcObject = videoStream;
+          } else {
+            video.src = window.URL.createObjectURL(videoStream); // for older browsers
+          }
+
+          video.play();
+        });
+      } catch (error) {
+        // TODO
+        console.log(error);
+        console.log(error.message);
+      }
+      // }
+    }
+
     /* MAIN */
     async function getOwnNode() {
       try {
@@ -424,6 +526,8 @@ function Dashboard() {
 
         node.handle("/add/1.0.0", handleAddProtocol); // TODO gestion this better
         node.handle("/chat/1.0.0", (connectionData) => handleChatProtocol(node, connectionData));
+        node.handle("/call/1.0.0", (connectionData) => handleCallProtocol(node, connectionData));
+
 
         await node.start();
 
@@ -471,7 +575,7 @@ function Dashboard() {
     // TODO redial for peers we have the id but didn't found!
     try {
       // get the associated peerId
-      const response = await axios.get(`http://localhost:8080/username/${contactUsername}`); // TODO: handle not found, etc
+      const response = await axios.get(`http://192.168.0.2:8080/username/${contactUsername}`); // TODO: handle not found, etc
       const { peerId: B58StringId } = response.data;
       const contact = new User(B58StringId, contactUsername);
 
@@ -500,7 +604,7 @@ function Dashboard() {
         await sendData(stream.sink, ["ACCEPTED"]);
 
         const messages = await receiveData(stream.source);
-        const message = messages.shift();
+        const message = messages.shift().toString();
 
         if (message === "OK") {
           // TODO set snackbar to succesful and say that the we had a request and we accepted it
@@ -515,7 +619,7 @@ function Dashboard() {
         await sendData(stream.sink, ["ADD", username]);
 
         const messages = await receiveData(stream.source);
-        const message = messages.shift();
+        const message = messages.shift().toString();
 
         if (message === "REGISTERED") {
           // TODO set snackbar to succesful
@@ -839,7 +943,17 @@ function Dashboard() {
               <GroupIcon />
             </Badge>
           </IconButton>
+
+          <IconButton
+            aria-label="receivedRequests"
+            color="primary"
+            onClick={() => call(ownNode, selectedContact)}
+          >
+            <CallIcon />
+          </IconButton>
         </div>
+
+        <video id="video" width="128" height="128" autoPlay />
 
         {/* TODO incarca optiuni dupa ce user a scris cateva litere...  */}
         <Autocomplete

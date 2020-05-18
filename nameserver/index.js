@@ -21,7 +21,7 @@ const sessionParser = session({
   },
 });
 
-const whitelist = ["http://localhost:3000", "http://192.168.1.2:3000"];
+const whitelist = ["http://localhost:3000", "http://192.168.0.2:3000", "https://192.168.0.2:3000", "https://localhost:3000"];
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -106,7 +106,7 @@ async function findByKey(req, res, searchKey, returnKey) {
     });
 
     if (user) res.status(200).json({ [returnKey]: user[returnKey] });
-    else res.status(404).json({ message: `${key} not registered` });
+    else res.status(404).json({ message: `${searchKey} not registered` });
   } catch (err) {
     console.error(err);
 
