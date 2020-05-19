@@ -47,7 +47,6 @@ function formatMessage(message) {
     originalData: message,
     position: didWeSend ? "right" : "left",
     replyButton: true,
-    type: "text",
     theme: "white",
     notch: false,
     // TODO: dont use localstorage
@@ -147,16 +146,16 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
   /* LOAD MESSAGES AND LISTEN FOR NEW ONES */
   useEffect(() => {
-    const handleMessages = (messages) => {
+    const handleMessages = (newMessage) => {
       setMessageList(prevMessages => (
         [
           ...prevMessages,
-          ...messages.map(msg => formatMessage(msg)),
+          formatMessage(newMessage),
         ]
       ));
     };
 
-    selectedContact.on("messages", handleMessages);
+    selectedContact.on("message", handleMessages);
 
     loadMessages(selectedContact.id)
       .then((messages) => {
@@ -260,18 +259,22 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
   const handleSubmit = useCallback(async () => {
     try {
-      let sentMessages;
+      const sentMessages = [];
 
       if (files.length) {
-        sentMessages = files.map(async file => sendFile(selectedContact, file, message));
+        // promise.all will kill client if files are too big
+        for (const file of files) {
+          const sentFile = await sendFile(selectedContact, file, message);
 
-        sentMessages = (await Promise.all(sentMessages)).flat(); // sendFile returns an array
-
+          sentMessages.push(sentFile);
+        }
 
         setDragElement(null);
         messagesEndRef.current.scrollIntoView();
       } else {
-        sentMessages = [await sendText(selectedContact, message)];
+        const sentText = await sendText(selectedContact, message);
+
+        sentMessages.push(sentText);
       }
 
       setMessage("");

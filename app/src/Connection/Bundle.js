@@ -8,6 +8,10 @@ import pipe from "it-pipe";
 import lp from "it-length-prefixed";
 
 class PeerNode extends Libp2p {
+  name = "PeerNode";
+
+  protocols = new Map();
+
   constructor(peerInfo) {
     const modules = {
       peerInfo,
@@ -41,6 +45,17 @@ class PeerNode extends Libp2p {
     });
 
     this.peerInfo = peerInfo;
+  }
+
+  handleProtocol(protocol, HandlerClass, options) {
+    const implementation = new HandlerClass(this, options);
+
+    this.handle(protocol, implementation.handler);
+    this.protocols.set(protocol, implementation);
+  }
+
+  getImplementation(protocol) {
+    return this.protocols.get(protocol);
   }
 }
 

@@ -1,21 +1,20 @@
 import React, { useEffect, useState } from "react";
+import moment from "moment";
+import { t } from "react-i18nify";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Typography from "@material-ui/core/Typography";
 import ListItemText from "@material-ui/core/ListItemText";
 import { makeStyles } from "@material-ui/core/styles";
 import Badge from "@material-ui/core/Badge";
-import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
 import List from "@material-ui/core/List";
 import SearchIcon from "@material-ui/icons/Search";
-import { t } from "react-i18nify";
 import IconButton from "@material-ui/core/IconButton";
 import PersonAddIcon from "@material-ui/icons/PersonAdd";
+import InputBase from "@material-ui/core/InputBase";
 import UserAvatar from "../../Components/UserAvatar";
 
 import "react-chat-elements-alex/dist/main.css";
-import InputBase from "@material-ui/core/InputBase";
-import moment from "moment";
 
 const useStyles = makeStyles(theme => ({
   subheader: {

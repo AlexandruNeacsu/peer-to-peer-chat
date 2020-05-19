@@ -30,8 +30,8 @@ class User extends EventEmitter {
     };
   }
 
-  handleMessages(messages) {
-    this.emit("messages", messages);
+  handleMessage(message) {
+    this.emit("message", message);
   }
 
   /**

@@ -1,36 +1,15 @@
-/* eslint-disable no-await-in-loop */
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import PeerId from "peer-id";
-import pushable from "it-pushable";
-import SimplePeer from "simple-peer";
 import ContactPage from "../ContactPage";
 import AddContactDialog from "./AddContactDialog";
 import RequestsPopper from "../Sidebar/RequestsPopper";
 import DatabaseHandler from "../../../Database";
-import createNode, { receiveData, sendData } from "../../../Connection/Bundle";
+import createNode from "../../../Connection/Bundle";
 import Loader from "../../Components/Loader";
-import User from "../../../Database/Schemas/User";
 import Sidebar from "../Sidebar";
-
-
-const MAX_CHAT_ITEM_SUBTITLE = 15;
-
-/**
- *
- * @param {string} B58StringId
- * @param {string} contactUsername
- * @return {Promise<void>}
- */
-async function acceptRequest(B58StringId, contactUsername) {
-  const database = DatabaseHandler.getDatabase();
-
-  await database.transaction("rw", database.requests, database.users, async () => {
-    await database.requests.delete(B58StringId);
-
-    await database.users.add({ id: B58StringId, username: contactUsername });
-  });
-}
+import PROTOCOLS, { Implementations } from "../../../Protocols";
+import { ADD_ENUM, ADD_EVENTS, CHAT_EVENTS } from "../../../Protocols/constants";
+import User from "../../../Database/Schemas/User";
 
 /**
  *
@@ -66,62 +45,6 @@ function updateContact(setContacts, contactId, fields) {
   });
 }
 
-async function call(node, user) {
-  // TODO: maybe combine sendFunctions
-  if (user) {
-    try {
-      // const peerId = PeerId.createFromB58String(user);
-
-      // const initialMessage = {
-      //   type: "CALL",
-      //   username: user.username,
-      // };
-
-      const { stream } = await node.dialProtocol(user.peerId, "/call/1.0.0"); // todo: works withouth info?
-      const videoStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      console.log(videoStream)
-
-      const peer = new SimplePeer({ initiator: true, stream: videoStream, trickle: false });
-
-      peer.on("signal", async data => {
-        await sendData(stream.sink, [JSON.stringify(data)]);
-        console.log("piped")
-
-        let signalData = await receiveData(stream.source);
-        console.log("received")
-
-        if (signalData.length) {
-          signalData = JSON.parse(signalData.shift().toString());
-          console.log(signalData)
-
-          peer.signal(signalData);
-        }
-      });
-
-      const video = document.querySelector("video");
-
-
-      if ("srcObject" in video) {
-        video.srcObject = videoStream;
-      } else {
-        video.src = window.URL.createObjectURL(videoStream); // for older browsers
-      }
-
-      await video.play();
-    } catch (error) {
-      // TODO, maybe try to resend, show disconnected, etc
-      console.log(error);
-      console.log(error.message);
-    }
-  }
-}
-
-const FILE_PARTS = {};
-
 function Chat() {
   // TODO clean this mess
   const [username, setUsername] = useState(localStorage.getItem("username"));
@@ -138,8 +61,6 @@ function Chat() {
 
   /** INITIALIZE NODE */
   useEffect(() => {
-    /* UTILITY FUNCTIONS */
-
     /**
      *
      * @param {PeerInfo} contactPeerInfo
@@ -160,307 +81,6 @@ function Chat() {
       );
     }
 
-    /* PROTOCOLS AND EVENTS */
-    async function handleAddProtocol({ connection, stream }) {
-      // TODO: is this concurrent safe?
-      // TODO: do we need to close the connection? how about on a refuse? or after final response?
-      const id = connection.remotePeer.toB58String();
-
-      try {
-        const database = DatabaseHandler.getDatabase();
-
-        const messages = await receiveData(stream.source);
-        const message = messages.shift().toString();
-
-        switch (message) {
-          case "ADD": {
-            const request = { id, username: messages.shift().toString() };
-
-            let status;
-
-            await database.transaction("rw", database.requests, database.users, async () => {
-              const alreadyRegistered = await database.requests.get({ id: request.id });
-
-              if (alreadyRegistered && alreadyRegistered.sent) {
-                // we sent a request and it wasn't accepted
-                // just accept the request
-                await acceptRequest(request.id, request.username);
-
-                status = "ACCEPTED";
-              } else if (!alreadyRegistered) {
-                await database.requests.add({ ...request, sent: false });
-
-                status = "REGISTERED";
-              }
-            });
-
-            // TODO
-            await sendData(stream.sink, [status]);
-
-            if (status === "REGISTERED") {
-              setReceivedRequests(preValues => [...preValues, request]);
-            } else {
-              const user = new User(request.id, request.username);
-              user.isConnected = true;
-
-              setContacts(prevContacts => ([
-                ...prevContacts,
-                user,
-              ]));
-            }
-            break;
-          }
-          case "ACCEPTED": {
-            // response to a contact request we sent at another moment in time
-
-            await database.transaction("rw", database.requests, database.users, async () => {
-              const request = await database.requests.get({ id });
-
-              if (request && request.sent) {
-                // we sent a request and it wasn't accepted
-                // just accept the request
-                await acceptRequest(id, request.username);
-
-                const user = new User(id, request.username);
-                user.isConnected = true;
-
-                setContacts(prevContacts => ([
-                  ...prevContacts,
-                  user,
-                ]));
-
-                setSentRequests(prevRequests => prevRequests.filter(e => e.id !== id));
-
-                await sendData(stream.sink, ["OK"]);
-              } else {
-                // TODO: sent not registered message
-              }
-            });
-            break;
-          }
-          case "REJECTED": {
-            const request = await database.requests.get({ id });
-
-            if (request) {
-              await database.requests.delete(id);
-
-
-              setSentRequests(prevRequests => prevRequests.filter(req => req.id !== id));
-              // TODO: maybe send confirmation?
-              // TODO: add notification: has been rejected
-            }
-            break;
-          }
-          default:
-            console.log(`Received unknown message ${message}`);
-        }
-      } catch (error) {
-        // TODO
-        console.log(error);
-        console.log(error.message);
-      }
-    }
-
-    async function handleChatProtocol(node, { connection, stream }) {
-      const database = DatabaseHandler.getDatabase();
-      const user = await database.users.get({ id: connection.remotePeer.toB58String() });
-
-      if (!user) {
-        // TODO: do we close the connection afther the message?
-        await sendData(stream.sink, ["REFUSED"]);
-
-        // TODO: is ok?
-        await node.hangUp(connection.remotePeer);
-      } else {
-        try {
-          const data = await receiveData(stream.source);
-
-          if (data.length) {
-            const structuredMessages = [];
-
-            const initialMessage = JSON.parse(data.shift().toString());
-
-            const chatItem = {
-              title: user.username,
-              date: new Date(),
-              unread: 0,
-            };
-
-            switch (initialMessage.type) {
-              case "TEXT": {
-                // TODO: use message class
-                // TODO: parse the message to ensure structure
-                const message = {
-                  type: initialMessage.type,
-                  sentDate: initialMessage.sentDate,
-                  text: initialMessage.text,
-                  receivedDate: chatItem.date,
-                  partnerId: user.id,
-                  partnerUsername: user.username, // TODO: this will show old username in chat history
-                  senderId: user.id,
-                  status: "received", // TODO move to an enum
-                };
-
-                structuredMessages.push(message);
-
-                chatItem.subtitle = message.text.slice(0, MAX_CHAT_ITEM_SUBTITLE);
-
-                break;
-              }
-              case "FILE": {
-                if (FILE_PARTS[initialMessage.file.name]) {
-                  if (!initialMessage.final) {
-                    FILE_PARTS[initialMessage.file.name]
-                      .data
-                      .push(data.shift().slice());
-                  } else {
-                    const parts = FILE_PARTS[initialMessage.file.name].data;
-                    // Get the total length of all arrays.
-                    let length = 0;
-                    parts.forEach(item => {
-                      length += item.length;
-                    });
-
-                    const mergedArray = new Uint8Array(length);
-                    let offset = 0;
-                    parts.forEach(item => {
-                      mergedArray.set(item, offset);
-                      offset += item.length;
-                    });
-
-                    delete FILE_PARTS[initialMessage.file.name];
-
-                    structuredMessages.push({
-                      type: initialMessage.file.type,
-                      file: {
-                        name: initialMessage.file.name,
-                        type: initialMessage.file.type,
-                        data: mergedArray,
-                      },
-                      sentDate: initialMessage.sentDate,
-                      receivedDate: new Date(),
-                      partnerId: user.id,
-                      partnerUsername: user.username, // TODO: this will show old username in chat history
-                      senderId: user.id,
-                      status: "received", // TODO move to an enum
-                    });
-
-
-                    if (initialMessage.text) {
-                      // TODO: check if type is String
-                      const textMessage = {
-                        type: "TEXT",
-                        sentDate: initialMessage.sentDate,
-                        text: initialMessage.text,
-                        receivedDate: new Date(),
-                        partnerId: user.id,
-                        partnerUsername: user.username, // TODO: this will show old username in chat history
-                        senderId: user.id,
-                        status: "received", // TODO move to an enum
-                      };
-
-                      structuredMessages.push(textMessage);
-
-                      chatItem.subtitle = initialMessage.text.slice(0, MAX_CHAT_ITEM_SUBTITLE);
-                    } else {
-                      chatItem.subtitle = "POZA TODO"; // TODO
-                    }
-                  }
-                } else {
-                  FILE_PARTS[initialMessage.file.name] = {
-                    name: initialMessage.file.name,
-                    type: initialMessage.file.type,
-                    data: [data.shift().slice()],
-                  };
-                }
-
-                break;
-              }
-              default:
-                // TODO throw
-                break;
-            }
-
-            if (structuredMessages.length) {
-              await database.transaction("rw", database.users, database.conversations, async () => {
-                await database.conversations.bulkAdd(structuredMessages);
-
-                chatItem.unread = await database.conversations.where({
-                  status: "received",
-                  partnerId: user.id,
-                }).count();
-
-                await database.users.put({ ...user, chatItem });
-              });
-
-              /**
-               * @type {User}
-               */
-              const contact = await updateContact(setContacts, user.id, { chatItem });
-
-              if (contact) {
-                contact.handleMessages(structuredMessages);
-              }
-            }
-          } else {
-            // TODO throw MessageIsNullException or something
-          }
-        } catch (error) {
-          // TODO
-          console.log(error);
-          console.log(error.message);
-        }
-      }
-    }
-
-    async function handleCallProtocol(node, { connection, stream }) {
-      // const database = DatabaseHandler.getDatabase();
-      // const user = await database.users.get({ id: connection.remotePeer.toB58String() });
-
-      // if (!user) {
-      //   // TODO: do we close the connection afther the message?
-      //   await sendData(stream.sink, ["REFUSED"]);
-      //
-      //   // TODO: is ok?
-      //   await node.hangUp(connection.remotePeer);
-      // } else {
-      try {
-        console.log("answering");
-
-        let signalData = await receiveData(stream.source);
-        signalData = JSON.parse(signalData.shift().toString());
-
-        const peer = new SimplePeer({ initiator: false, trickle: false });
-        peer.signal(signalData);
-
-        peer.on("signal", async data => {
-          await sendData(stream.sink, [JSON.stringify(data)]);
-        });
-
-        peer.on("stream", videoStream => {
-          // got remote video stream, now let's show it in a video tag
-          const video = document.querySelector("video");
-
-          console.log("video")
-          console.log(videoStream)
-
-          if ("srcObject" in video) {
-            video.srcObject = videoStream;
-          } else {
-            video.src = window.URL.createObjectURL(videoStream); // for older browsers
-          }
-
-          video.play();
-        });
-      } catch (error) {
-        // TODO
-        console.log(error);
-        console.log(error.message);
-      }
-      // }
-    }
-
-    /* MAIN */
     async function getOwnNode() {
       try {
         const database = DatabaseHandler.getDatabase();
@@ -486,9 +106,53 @@ function Chat() {
           console.log(err.message);
         });
 
-        node.handle("/add/1.0.0", handleAddProtocol); // TODO gestion this better
-        node.handle("/chat/1.0.0", (connectionData) => handleChatProtocol(node, connectionData));
-        node.handle("/call/1.0.0", (connectionData) => handleCallProtocol(node, connectionData));
+        node.handleProtocol(PROTOCOLS.ADD, Implementations[PROTOCOLS.ADD], database);
+        node.handleProtocol(PROTOCOLS.CHAT, Implementations[PROTOCOLS.CHAT], database);
+        node.handleProtocol(PROTOCOLS.CALL, Implementations[PROTOCOLS.CALL], database);
+
+        node
+          .getImplementation(PROTOCOLS.ADD)
+          .on(ADD_EVENTS.SENT, (request) => setSentRequests(prevValues => ([...prevValues, request])))
+          .on(ADD_EVENTS.RECEIVED, (request) => setReceivedRequests(prevValues => ([...prevValues, request])))
+          .on(ADD_EVENTS.ACCEPTED, (request) => {
+            console.log(request)
+            const contact = new User(request.id, request.username);
+            contact.isConnected = true;
+
+            setContacts(prevContacts => ([
+              ...prevContacts,
+              contact,
+            ]));
+
+            if (request.sent) {
+              setSentRequests(prevRequests => prevRequests.filter(req => req.id !== request.id));
+            } else {
+              setReceivedRequests(prevRequests => prevRequests.filter(req => req.id !== request.id));
+            }
+          })
+          .on(ADD_EVENTS.REJECTED, (request) => {
+            if (request.sent) {
+              setSentRequests(prevRequests => prevRequests.filter(prev => prev.id !== request.id));
+            } else {
+              setReceivedRequests(prevRequests => prevRequests.filter(prev => prev.id !== request.id));
+            }
+          });
+
+        node
+          .getImplementation(PROTOCOLS.CHAT)
+          .on(CHAT_EVENTS.SENT, async ({ id }, chatItem) => {
+            await updateContact(setContacts, id, { chatItem });
+          })
+          .on(CHAT_EVENTS.RECEIVED, async ({ id }, chatItem, structuredMessage) => {
+            const contact = await updateContact(setContacts, id, { chatItem });
+
+            if (contact) {
+              contact.handleMessage(structuredMessage);
+            }
+          });
+
+        // node
+        //   .getImplementation(PROTOCOLS.CALL) // TODO
 
 
         await node.start();
@@ -531,135 +195,6 @@ function Chat() {
 
     getDatabaseData();
   }, []);
-
-  /* HANDLERS */
-  const handleAddContact = async (contactUsername) => {
-    // TODO redial for peers we have the id but didn't found!
-    try {
-      // get the associated peerId
-      const response = await axios.get(`http://192.168.0.2:8080/username/${contactUsername}`); // TODO: handle not found, etc
-      const { peerId: B58StringId } = response.data;
-      const contact = new User(B58StringId, contactUsername);
-
-      const database = DatabaseHandler.getDatabase();
-      const isInDatabase = await database.requests.get({ id: contact.id });
-
-      const peerId = PeerId.createFromB58String(contact.id);
-
-      contact.peerInfo = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
-      // try to dial
-      const { stream } = await ownNode.dialProtocol(contact.peerInfo, "/add/1.0.0");
-
-      /*
-      TODO: what to do if peer is not found
-      how do we handle accepting the contact request locally
-      and then send our response to the remote user when connection is available
-      */
-
-      if (isInDatabase && !isInDatabase.sent) {
-        // we received a request and we haven't accepted it
-        await acceptRequest(contact.id, contactUsername);
-
-        setContacts(prevContacts => ([...prevContacts, contact]));
-
-        // send our response
-        await sendData(stream.sink, ["ACCEPTED"]);
-
-        const messages = await receiveData(stream.source);
-        const message = messages.shift().toString();
-
-        if (message === "OK") {
-          // TODO set snackbar to succesful and say that the we had a request and we accepted it
-
-          console.log("OK");
-        } else {
-          // TODO crash, burn
-        }
-
-        // TODO: snackbar that it was accepted?
-      } else if (!isInDatabase) {
-        await sendData(stream.sink, ["ADD", username]);
-
-        const messages = await receiveData(stream.source);
-        const message = messages.shift().toString();
-
-        if (message === "REGISTERED") {
-          // TODO set snackbar to succesful
-
-          await database.requests.add({ ...contact.export(), sent: true }); // TODO: wouldn't contact id clash with request id?
-          setSentRequests(prevValues => ([...prevValues, contact]));
-        } else if (message === "ACCEPTED") {
-          await database.users.add(contact.export());
-
-          setContacts(prevContacts => ([...prevContacts, contact]));
-        }
-      }
-    } catch (error) {
-      if (error.response) {
-        // TODO: handle username not found, server error from nameservice, etc
-        console.log(error.response.data);
-        console.log(error.response.status);
-        console.log(error.response.headers);
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.log(error.request);
-      } else {
-        // TODO id not found, contact not reached, etc...
-        // Something happened in setting up the request that triggered an Error
-        console.log("Error", error.message);
-        console.log(error);
-      }
-    }
-  };
-
-  async function handleAcceptRequest(B58StringId, contactUsername) {
-    try {
-      await acceptRequest(B58StringId, contactUsername);
-
-      // TODO: resend accept when peer is online
-      const peerId = PeerId.createFromB58String(B58StringId);
-
-      const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
-      // try to dial
-      const { stream } = await ownNode.dialProtocol(info, "/add/1.0.0");
-      await sendData(stream.sink, ["ACCEPTED"]); // TODO what if they didn't receive the message?
-
-      const contact = new User(B58StringId, contactUsername);
-      contact.peerInfo = info;
-
-      // TODO use user object
-      setContacts(prevContacts => ([...prevContacts, contact]));
-      setReceivedRequests(prevRequsts => prevRequsts.filter(req => req.id !== B58StringId));
-    } catch (error) {
-      // TODO
-      console.log(error);
-      console.log(error.message);
-    }
-  }
-
-  async function handleRejectRequest(B58StringId) {
-    try {
-      const database = DatabaseHandler.getDatabase();
-      await database.requests.delete(B58StringId);
-
-      // TODO: resend accept when peer is online
-      const peerId = PeerId.createFromB58String(B58StringId);
-
-      const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
-      // try to dial
-      const { stream } = await ownNode.dialProtocol(info, "/add/1.0.0");
-      await sendData(stream.sink, ["REJECTED"]); // TODO what if they didn't receive the message?
-
-      // TODO: maybe await for confirmation?
-
-      // TODO use user object
-      setReceivedRequests(prevRequsts => prevRequsts.filter(req => req.id !== B58StringId));
-    } catch (error) {
-      // TODO
-      console.log(error);
-      console.log(error.message);
-    }
-  }
 
   async function handleSelectContact(newContact) {
     async function setMessagesStatus(contact) {
@@ -714,217 +249,53 @@ function Chat() {
     });
   }
 
-  /**
-   *
-   * @param {User} user
-   * @param {String} text
-   * @return {Promise<{sentDate: Date, senderId: string, data: *, partnerUsername: string, partnerId: String, type: string, status: string}>}
-   */
-  async function sendTextMessage(user, text) {
-    if (user && text) {
-      try {
-        const message = {
-          type: "TEXT",
-          sentDate: new Date(), // TODO: repalce with new Date() ?
-          text,
-        };
-
-        const peerId = PeerId.createFromB58String(user.id);
-        // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
-        const { stream } = await ownNode.dialProtocol(peerId, "/chat/1.0.0"); // todo: works withouth info?
-
-        await sendData(stream.sink, [JSON.stringify(message)]);
-
-        const structuredMessage = {
-          // TODO: handle images, maps, etc...
-          ...message,
-          partnerId: user.id,
-          partnerUsername: user.username, // TODO: will show old username in chat history
-          senderId: localStorage.getItem("id"),
-          status: "sent", // TODO move to an enum && handle wainting status(before sending with sendData)
-        };
-
-        const contact = await updateContact(
-          setContacts,
-          user.id,
-          {
-            chatItem: {
-              title: user.username,
-              subtitle: text.slice(0, MAX_CHAT_ITEM_SUBTITLE),
-              date: message.sentDate,
-              unread: 0, // sanity check
-            },
-          },
-        );
-
-        const database = DatabaseHandler.getDatabase();
-        await database.transaction("rw", database.users, database.conversations, async () => {
-          await database.conversations.add(structuredMessage);
-          await database.users.put(contact.export());
-        });
-
-        return structuredMessage;
-      } catch (error) {
-        // TODO, maybe try to resend, show disconnected, etc
-        console.log(error);
-        console.log(error.message);
-
-        return null;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   *
-   * @param {User} user
-   * @param {Uint8Array} file
-   * @param {String} text
-   * @return {Promise<{senderId: string, partnerUsername: *, partnerId: *, status: string}>}
-   */
-  async function sendFile(user, file, text) {
-    // TODO: maybe combine sendFunctions
-    if (user && file) {
-      try {
-        const peerId = PeerId.createFromB58String(user.id);
-
-        // TODO check files format {file: FILE, text: String}
-        const initialMessage = {
-          type: "FILE",
-          file: {
-            name: file.name,
-            type: file.type === "image" ? "PHOTO" : "FILE",
-          },
-        };
-
-        for (let i = 0; i < file.data.length; i += 200_000) {
-          // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
-          const { stream } = await ownNode.dialProtocol(peerId, "/chat/1.0.0"); // todo: works withouth info?
-
-          const source = pushable();
-          source.push(JSON.stringify(initialMessage));
-          source.push(file.data.slice(i, i + 200_000));
-          source.end();
-
-          await sendData(stream.sink, source);
-        }
-
-        // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
-        const { stream } = await ownNode.dialProtocol(peerId, "/chat/1.0.0"); // todo: works withouth info?
-
-        // TODO check files format {file: FILE, text: String}
-        const finalMessage = {
-          type: "FILE",
-          final: true,
-          text,
-          sentDate: new Date(),
-          file: {
-            name: file.name,
-            type: file.type === "image" ? "PHOTO" : "FILE",
-          },
-        };
-
-        await sendData(stream.sink, [JSON.stringify(finalMessage)]);
-
-
-        const structuredMessages = [{
-          type: finalMessage.file.type,
-          sentDate: finalMessage.sentDate,
-          partnerId: user.id,
-          partnerUsername: user.username, // TODO: will show old username in chat history
-          senderId: localStorage.getItem("id"),
-          status: "sent", // TODO move to an enum && handle wainting status(before sending with sendData)
-          file,
-        }];
-
-        if (text) {
-          const textMessage = {
-            type: "TEXT",
-            sentDate: finalMessage.sentDate,
-            partnerId: user.id,
-            partnerUsername: user.username, // TODO: will show old username in chat history
-            senderId: localStorage.getItem("id"),
-            status: "sent", // TODO move to an enum && handle wainting status(before sending with sendData)
-            text,
-          };
-
-          structuredMessages.push(textMessage);
-        }
-
-        const contact = await updateContact(
-          setContacts,
-          user.id,
-          {
-            chatItem: {
-              title: user.username,
-              subtitle: text || "POZA TODO",
-              date: finalMessage.sentDate,
-              unread: 0, // sanity check
-            },
-          },
-        );
-
-        const database = DatabaseHandler.getDatabase();
-        await database.transaction("rw", database.users, database.conversations, async () => {
-          await database.conversations.bulkAdd(structuredMessages);
-          await database.users.put(contact.export());
-        });
-
-        return structuredMessages;
-      } catch (error) {
-        // TODO, maybe try to resend, show disconnected, etc
-        console.log(error);
-        console.log(error.message);
-
-        return null;
-      }
-    }
-    return null;
-  }
-
   return (
     <Loader isLoading={!ownNode}>
-      <Sidebar
-        username={username}
-        isOnline={isConnectedToPeers}
-        contacts={contacts}
-        handleAcceptRequest={handleAcceptRequest}
-        handleRejectRequest={handleRejectRequest}
-        onAddContact={() => setModalOpen(true)}
-        handleSelectContact={handleSelectContact}
-        receivedRequests={receivedRequests}
-        sentRequests={sentRequests}
-      />
-
-      {/* TODO add something */}
       {
-        selectedContact
-          ? (
-            <ContactPage
-              selectedContact={selectedContact}
-              sendText={sendTextMessage}
-              sendFile={sendFile}
+        !!ownNode && (
+          <>
+            <Sidebar
+              username={username}
+              isOnline={isConnectedToPeers}
+              contacts={contacts}
+              handleAcceptRequest={ownNode.getImplementation(PROTOCOLS.ADD).accept}
+              handleRejectRequest={ownNode.getImplementation(PROTOCOLS.ADD).reject}
+              onAddContact={() => setModalOpen(true)}
+              handleSelectContact={handleSelectContact}
+              receivedRequests={receivedRequests}
+              sentRequests={sentRequests}
             />
-          )
-          : "TODO"
+
+            {
+              selectedContact
+                ? (
+                  <ContactPage
+                    selectedContact={selectedContact}
+                    sendText={ownNode.getImplementation(PROTOCOLS.CHAT).sendText}
+                    sendFile={ownNode.getImplementation(PROTOCOLS.CHAT).sendFile}
+                  />
+                )
+                : "TODO"
+            }
+
+
+            <AddContactDialog
+              open={modalOpen}
+              handleClose={() => setModalOpen(false)}
+              handleSubmit={(contactUsername) => ownNode.getImplementation(PROTOCOLS.ADD).add(username, contactUsername)}
+            />
+
+            <RequestsPopper
+              receivedRequests={receivedRequests}
+              sentRequests={sentRequests}
+              anchorEl={anchorEl}
+              onClickAway={() => setAnchorEl(null)}
+              handleAccept={ownNode.getImplementation(PROTOCOLS.ADD).accept}
+              handleReject={ownNode.getImplementation(PROTOCOLS.ADD).reject}
+            />
+          </>
+        )
       }
-
-
-      <AddContactDialog
-        open={modalOpen}
-        handleClose={() => setModalOpen(false)}
-        handleSubmit={handleAddContact}
-      />
-
-      <RequestsPopper
-        receivedRequests={receivedRequests}
-        sentRequests={sentRequests}
-        anchorEl={anchorEl}
-        onClickAway={() => setAnchorEl(null)}
-        handleAccept={handleAcceptRequest}
-        handleReject={handleRejectRequest}
-      />
     </Loader>
   );
 }
