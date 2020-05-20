@@ -2,13 +2,12 @@ import React, { useEffect, useState } from "react";
 import PeerId from "peer-id";
 import ContactPage from "../ContactPage";
 import AddContactDialog from "./AddContactDialog";
-import RequestsPopper from "../Sidebar/RequestsPopper";
 import DatabaseHandler from "../../../Database";
 import createNode from "../../../Connection/Bundle";
 import Loader from "../../Components/Loader";
 import Sidebar from "../Sidebar";
 import PROTOCOLS, { Implementations } from "../../../Protocols";
-import { ADD_ENUM, ADD_EVENTS, CHAT_EVENTS } from "../../../Protocols/constants";
+import { ADD_EVENTS, CHAT_EVENTS } from "../../../Protocols/constants";
 import User from "../../../Database/Schemas/User";
 
 /**
@@ -51,7 +50,6 @@ function Chat() {
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   // TODO: show a message or something if not connected to a peer
@@ -115,7 +113,6 @@ function Chat() {
           .on(ADD_EVENTS.SENT, (request) => setSentRequests(prevValues => ([...prevValues, request])))
           .on(ADD_EVENTS.RECEIVED, (request) => setReceivedRequests(prevValues => ([...prevValues, request])))
           .on(ADD_EVENTS.ACCEPTED, (request) => {
-            console.log(request)
             const contact = new User(request.id, request.username);
             contact.isConnected = true;
 
@@ -253,18 +250,18 @@ function Chat() {
     <Loader isLoading={!ownNode}>
       {
         !!ownNode && (
-          <>
-            <Sidebar
-              username={username}
-              isOnline={isConnectedToPeers}
-              contacts={contacts}
-              handleAcceptRequest={ownNode.getImplementation(PROTOCOLS.ADD).accept}
-              handleRejectRequest={ownNode.getImplementation(PROTOCOLS.ADD).reject}
-              onAddContact={() => setModalOpen(true)}
-              handleSelectContact={handleSelectContact}
-              receivedRequests={receivedRequests}
-              sentRequests={sentRequests}
-            />
+          <Sidebar
+            username={username}
+            isOnline={isConnectedToPeers}
+            contacts={contacts}
+            handleAcceptRequest={ownNode.getImplementation(PROTOCOLS.ADD).accept}
+            handleRejectRequest={ownNode.getImplementation(PROTOCOLS.ADD).reject}
+            onAddContact={() => setModalOpen(true)}
+            selectedContact={selectedContact}
+            handleSelectContact={handleSelectContact}
+            receivedRequests={receivedRequests}
+            sentRequests={sentRequests}
+          >
 
             {
               selectedContact
@@ -284,16 +281,7 @@ function Chat() {
               handleClose={() => setModalOpen(false)}
               handleSubmit={(contactUsername) => ownNode.getImplementation(PROTOCOLS.ADD).add(username, contactUsername)}
             />
-
-            <RequestsPopper
-              receivedRequests={receivedRequests}
-              sentRequests={sentRequests}
-              anchorEl={anchorEl}
-              onClickAway={() => setAnchorEl(null)}
-              handleAccept={ownNode.getImplementation(PROTOCOLS.ADD).accept}
-              handleReject={ownNode.getImplementation(PROTOCOLS.ADD).reject}
-            />
-          </>
+          </Sidebar>
         )
       }
     </Loader>

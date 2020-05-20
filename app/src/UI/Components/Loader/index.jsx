@@ -13,8 +13,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 /* Displays a loader until the props changes */
-export default function Loader(props) {
-  const { isLoading, children } = props;
+export default function Loader({ isLoading, children }) {
   const classes = useStyles();
 
   return isLoading ? (

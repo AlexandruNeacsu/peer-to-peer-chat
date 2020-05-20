@@ -1,8 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
-import Typography from "@material-ui/core/Typography";
 import { TextField, IconButton } from "@material-ui/core";
 import SendIcon from "@material-ui/icons/Send";
 import { MessageList } from "react-chat-elements";
@@ -10,9 +7,8 @@ import DatabaseHandler from "../../../Database";
 import UploadFile from "./UploadFile";
 
 import "react-chat-elements/dist/main.css";
-import "./ReactChatElementsMultiline.css";
+import "./ReactChatElementsCustomized.css";
 
-const drawerWidth = 240;
 
 const useStyles = makeStyles(theme => ({
   toolbar: theme.mixins.toolbar,
@@ -21,20 +17,18 @@ const useStyles = makeStyles(theme => ({
     flexDirection: "column",
     flexGrow: 1,
     backgroundColor: theme.palette.background.default,
-    padding: theme.spacing(3),
-  },
-  appBar: {
-    width: `calc(100% - ${drawerWidth}px)`,
-    marginLeft: drawerWidth,
   },
   chat: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
+    padding: theme.spacing(1),
   },
   input: {
     display: "flex",
     alignItems: "center",
+    padding: theme.spacing(1, 2),
+    backgroundColor: theme.palette.background.paper,
   },
 }));
 
@@ -50,7 +44,7 @@ function formatMessage(message) {
     theme: "white",
     notch: false,
     // TODO: dont use localstorage
-    title: didWeSend ? localStorage.getItem("username") : message.partnerUsername,
+    // title: didWeSend ? localStorage.getItem("username") : message.partnerUsername,
     // titleColor: this.getRandomColor(), // TODO add to user
     date: didWeSend ? message.sentDate : message.receivedDate,
   };
@@ -264,6 +258,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
       if (files.length) {
         // promise.all will kill client if files are too big
         for (const file of files) {
+          // eslint-disable-next-line no-await-in-loop
           const sentFile = await sendFile(selectedContact, file, message);
 
           sentMessages.push(sentFile);
@@ -305,14 +300,6 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
     >
-      <AppBar position="fixed" className={classes.appBar}>
-        <Toolbar>
-          <Typography variant="h6" noWrap>
-            Permanent drawer
-          </Typography>
-        </Toolbar>
-      </AppBar>
-
       {/* push the content down so it's not under the navbar */}
       <div className={classes.toolbar} />
 
@@ -347,6 +334,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
         <TextField
           id="standard-multiline-flexible"
           label="Multiline"
+          variant="outlined"
           fullWidth
           multiline
           rowsMax="4"

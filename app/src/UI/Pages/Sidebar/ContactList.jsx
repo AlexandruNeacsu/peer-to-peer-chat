@@ -74,7 +74,7 @@ const useStyles = makeStyles(theme => ({
  * @param {function} setSelectedContact
  * @param {function} handleAdd TODO rename, we are not adding, just opening a modal
  */
-export default function ContactList({ contacts, setSelectedContact, onAdd }) {
+export default function ContactList({ contacts, selectedContact, setSelectedContact, onAdd }) {
   const classes = useStyles();
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [filter, setFilter] = useState("");
@@ -123,6 +123,7 @@ export default function ContactList({ contacts, setSelectedContact, onAdd }) {
         {filteredContacts.map(contact => (
           <ListItem
             button
+            selected={selectedContact === contact}
             className={classes.contact}
             key={contact.username}
             onClick={() => setSelectedContact(contact)}

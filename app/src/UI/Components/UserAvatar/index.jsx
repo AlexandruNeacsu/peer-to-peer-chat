@@ -22,6 +22,8 @@ const useStyles = makeStyles(theme => ({
 function UserAvatar({ username, image, isOnline = false, showBadge = false, showUsername = false }) {
   const classes = useStyles();
 
+  const formatedUsername = username && username.toUpperCase();
+
   return (
     <div className={classes.container}>
       {
@@ -36,10 +38,10 @@ function UserAvatar({ username, image, isOnline = false, showBadge = false, show
               }}
               variant="dot"
             >
-              <Avatar alt={username} src={image || AccountCircleIcon} />
+              <Avatar alt={formatedUsername} src={image || AccountCircleIcon} />
             </StatusBadge>
           )
-          : <Avatar alt={username} src={image || AccountCircleIcon} />
+          : <Avatar alt={formatedUsername} src={image || AccountCircleIcon} />
       }
 
       {

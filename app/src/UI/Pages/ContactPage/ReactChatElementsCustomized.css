@@ -1,0 +1,25 @@
+.rce-mbox-text {
+    white-space: pre-wrap;
+}
+
+.rce-container-mbox > .rce-mbox {
+    /*background: #282c34;*/
+    background-color: rgb(40, 44, 52);
+    /*box-shadow: rgba(0, 0, 0, 0.7) 0 0 1px 0, rgba(0, 0, 0, 0.5) 0 3px 4px -2px;*/
+}
+
+.rce-container-mbox > .rce-mbox.rce-mbox-right {
+    background: #7169FF;
+}
+
+.rce-mbox-body .rce-mbox-title {
+    color: #FFFF;
+}
+
+.rce-mbox-text {
+    color: #FFFF;
+}
+
+.rce-mbox .rce-mbox-time {
+    color: #FFFF;
+}

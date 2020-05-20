@@ -8,7 +8,7 @@ export default {
   white,
   type: "dark",
   primary: {
-    main: "rgba(255, 255, 255, 0.54)",
+    main: "#8a85ff",
   },
   secondary: {
     main: "#8a85ff",
