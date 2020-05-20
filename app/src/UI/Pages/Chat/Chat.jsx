@@ -61,9 +61,6 @@ function Chat() {
   const [inCall, setInCall] = useState(false);
   const [isCalled, setIsCalled] = useState(false);
 
-  const videoRef = useRef();
-
-
   /* INITIALIZE NODE */
   useEffect(() => {
     /**
@@ -164,9 +161,12 @@ function Chat() {
             if (!contact) {
               // TODO
             } else {
+              const hasVideo = stream.getVideoTracks()[0];
+
               setCaller({
                 contact,
                 stream,
+                hasVideo,
               });
               setIsCalled(true);
             }
@@ -271,16 +271,6 @@ function Chat() {
 
   const handleCallResponse = (willAnswer) => {
     if (willAnswer) {
-      console.log("here")
-      if ("srcObject" in videoRef.current) {
-        videoRef.current.srcObject = caller.stream;
-      } else {
-        // for older browsers
-        videoRef.current.src = window.URL.createObjectURL(caller.stream);
-      }
-
-      videoRef.current.play();
-
       setIsCalled(false);
       setInCall(true);
     }
@@ -307,7 +297,7 @@ function Chat() {
 
             {
               inCall && caller ? (
-                <VideoCall stream={caller.stream} />
+                <VideoCall stream={caller.stream} isVideo={caller.hasVideo} />
               ): null
             }
 

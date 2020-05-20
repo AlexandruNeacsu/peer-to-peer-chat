@@ -16,7 +16,7 @@
       <scope value="GLOBAL" />
       <destination value="FILE" />
       <format value="EXCEL" />
-      <charset value="UTF-8" />
+      <charset value="windows-1252" />
     </export-instructions>
   </component>
   <component name="DBNavigator.Project.DatabaseBrowserManager">
@@ -25,7 +25,7 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="84d841b2-353e-4060-b057-c0911b92e924">
-        <schema name="public" object-types="column, dataset trigger, constraint, table, view, index, sequence, function" />
+        <schema name="public" object-types="column, dataset trigger, index, function, sequence, table, constraint, view" />
       </connection>
     </loaded-nodes>
   </component>

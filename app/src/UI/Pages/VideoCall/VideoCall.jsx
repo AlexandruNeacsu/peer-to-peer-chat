@@ -1,19 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 
-const VideoCall = ({ stream }) => {
+const VideoCall = ({ stream, isVideo}) => {
   const ref = useRef();
 
-  const [isVideo, setIsVideo] = useState(false);
-
-
   useEffect(() => {
-    const hasVideo = stream.getVideoTracks()[0];
-
-    if (hasVideo) {
-      setIsVideo(true);
-    }
-
     ref.current.srcObject = stream;
+    ref.current.play();
   }, [stream]);
 
 
@@ -23,7 +15,7 @@ const VideoCall = ({ stream }) => {
 
       {
         isVideo ? (
-          <video ref={ref} autoPlay />
+          <video ref={ref} autoPlay width="128" height="128" />
         ) : (
           <audio ref={ref} autoPlay />
         )
