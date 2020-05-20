@@ -29,6 +29,7 @@ const useStyles = makeStyles(theme => ({
     alignItems: "center",
     padding: theme.spacing(1, 2),
     backgroundColor: theme.palette.background.paper,
+    borderTop: "1px solid rgba(255, 255, 255, 0.12)",
   },
 }));
 

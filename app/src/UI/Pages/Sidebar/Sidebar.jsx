@@ -39,6 +39,7 @@ const useStyles = makeStyles(theme => ({
     width: `calc(100% - ${drawerWidth}px)`,
     marginLeft: drawerWidth,
     backgroundColor: theme.palette.background.paper,
+    borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
   },
   userItems: {
     ...theme.mixins.toolbar,
@@ -89,6 +90,8 @@ function Sidebar({
               </div>
             )
           }
+          <Divider />
+
         </Toolbar>
       </AppBar>
 
