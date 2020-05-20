@@ -61,7 +61,7 @@ function Register({ handleSubmit }) {
               message: t("Auth.Errors.UsernameNotFree"),
               test: async username => {
                 try {
-                  const response = await axios.get(`http://192.168.0.2:8080/check/username/${username}`); // TODO: handle not found, etc
+                  const response = await axios.get(`http://localhost:8080/check/username/${username}`); // TODO: handle not found, etc
                   const { data } = response;
 
                   return !!data.success;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import PeerId from "peer-id";
 import ContactPage from "../ContactPage";
 import AddContactDialog from "./AddContactDialog";
@@ -7,8 +7,10 @@ import createNode from "../../../Connection/Bundle";
 import Loader from "../../Components/Loader";
 import Sidebar from "../Sidebar";
 import PROTOCOLS, { Implementations } from "../../../Protocols";
-import { ADD_EVENTS, CHAT_EVENTS } from "../../../Protocols/constants";
+import { ADD_EVENTS, CALL_EVENTS, CHAT_EVENTS } from "../../../Protocols/constants";
 import User from "../../../Database/Schemas/User";
+import CallAlert from "./CallAlert";
+import VideoCall from "../VideoCall";
 
 /**
  *
@@ -55,9 +57,14 @@ function Chat() {
   // TODO: show a message or something if not connected to a peer
   const [isConnectedToPeers, setIsConnectedToPeer] = useState(false);
   const [ownNode, setOwnNode] = useState(null);
+  const [caller, setCaller] = useState(null);
+  const [inCall, setInCall] = useState(false);
+  const [isCalled, setIsCalled] = useState(false);
+
+  const videoRef = useRef();
 
 
-  /** INITIALIZE NODE */
+  /* INITIALIZE NODE */
   useEffect(() => {
     /**
      *
@@ -92,7 +99,7 @@ function Chat() {
         node.on("peer:connect", async (peerInfo) => {
           // this should be done automatically by libp2p
           // but it's not
-          await node.dial(peerInfo);
+          // await node.dial(peerInfo);
           // await node._dht._add(peerInfo);
 
 
@@ -148,8 +155,22 @@ function Chat() {
             }
           });
 
-        // node
-        //   .getImplementation(PROTOCOLS.CALL) // TODO
+
+        node
+          .getImplementation(PROTOCOLS.CALL)
+          .on(CALL_EVENTS.CALLED, (callerId, stream) => {
+            const contact = contacts.find(c => c.id === callerId);
+
+            if (!contact) {
+              // TODO
+            } else {
+              setCaller({
+                contact,
+                stream,
+              });
+              setIsCalled(true);
+            }
+          });
 
 
         await node.start();
@@ -165,7 +186,7 @@ function Chat() {
     if (!ownNode) {
       getOwnNode();
     }
-  }, [ownNode, selectedContact]);
+  }, [ownNode, contacts, selectedContact]);
 
   /* LOAD DATABASE DATA */
   useEffect(() => {
@@ -192,6 +213,8 @@ function Chat() {
 
     getDatabaseData();
   }, []);
+
+  /* HANDLE CALLS */
 
   async function handleSelectContact(newContact) {
     async function setMessagesStatus(contact) {
@@ -246,6 +269,24 @@ function Chat() {
     });
   }
 
+  const handleCallResponse = (willAnswer) => {
+    if (willAnswer) {
+      console.log("here")
+      if ("srcObject" in videoRef.current) {
+        videoRef.current.srcObject = caller.stream;
+      } else {
+        // for older browsers
+        videoRef.current.src = window.URL.createObjectURL(caller.stream);
+      }
+
+      videoRef.current.play();
+
+      setIsCalled(false);
+      setInCall(true);
+    }
+  };
+
+
   return (
     <Loader isLoading={!ownNode}>
       {
@@ -261,10 +302,17 @@ function Chat() {
             handleSelectContact={handleSelectContact}
             receivedRequests={receivedRequests}
             sentRequests={sentRequests}
+            call={() => ownNode.getImplementation(PROTOCOLS.CALL).call(selectedContact)}
           >
 
             {
-              selectedContact
+              inCall && caller ? (
+                <VideoCall stream={caller.stream} />
+              ): null
+            }
+
+            {
+              selectedContact && !caller
                 ? (
                   <ContactPage
                     selectedContact={selectedContact}
@@ -281,6 +329,18 @@ function Chat() {
               handleClose={() => setModalOpen(false)}
               handleSubmit={(contactUsername) => ownNode.getImplementation(PROTOCOLS.ADD).add(username, contactUsername)}
             />
+
+            {
+              isCalled ? (
+                  <CallAlert
+                    open={isCalled}
+                    contact={caller}
+                    onClose={handleCallResponse}
+                  />
+                )
+                : null
+            }
+
           </Sidebar>
         )
       }

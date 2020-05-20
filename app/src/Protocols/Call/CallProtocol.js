@@ -27,7 +27,7 @@ export default class ChatProtocol extends BaseProtocol {
         await sendData(stream.sink, [JSON.stringify(data)]);
       });
 
-      peer.on("stream", videoStream => this.emit(CALL_EVENTS.CALLED, videoStream));
+      peer.on("stream", videoStream => this.emit(CALL_EVENTS.CALLED, connection.remotePeer.toB58String(), videoStream));
     } catch (error) {
       // TODO
       console.log(error);

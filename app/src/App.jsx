@@ -46,7 +46,7 @@ function App() {
 
         const id = userPeerInfo.id.toB58String();
 
-        const response = await axios.post("http://192.168.0.2:8080/signup", {
+        const response = await axios.post("http://localhost:8080/signup", {
           username,
           peerId: id,
           password,

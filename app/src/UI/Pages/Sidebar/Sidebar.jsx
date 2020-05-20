@@ -60,6 +60,7 @@ function Sidebar({
   sentRequests,
   handleAcceptRequest,
   handleRejectRequest,
+  call,
   children,
 }) {
   const classes = useStyles();
@@ -83,7 +84,7 @@ function Sidebar({
                 </div>
 
                 <div>
-                  <IconButton>
+                  <IconButton onClick={call}>
                     <CallIcon />
                   </IconButton>
                 </div>

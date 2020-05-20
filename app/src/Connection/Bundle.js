@@ -70,7 +70,7 @@ export default async function createNode(id) {
 
   const peerIdStr = peerInfo.id.toB58String();
 
-  peerInfo.multiaddrs.add(`/ip4/192.168.0.2/tcp/9090/ws/p2p-webrtc-star/p2p/${peerIdStr}`);
+  peerInfo.multiaddrs.add(`/dns4/localhost/tcp/9090/ws/p2p-webrtc-star/p2p/${peerIdStr}`);
   peerInfo.multiaddrs.add("/ip4/0.0.0.0/tcp/0");
 
   return new PeerNode(peerInfo);
