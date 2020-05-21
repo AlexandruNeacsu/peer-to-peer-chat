@@ -172,6 +172,12 @@ export default class ChatProtocol extends BaseProtocol {
 
       this._peer.on("close", () => this.emit(CALL_EVENTS.CLOSE));
 
+      this._peer.on("error", (error) => {
+        console.log(error);
+        console.log(error.message);
+
+        this.hangUp();
+      });
     } catch (error) {
       // TODO, maybe try to resend, show disconnected, etc
       console.log(error);

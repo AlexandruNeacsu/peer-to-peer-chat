@@ -57,8 +57,20 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
   const [expanded, setExpanded] = useState(false);
   const [hasSound, setHasSound] = useState(true);
   const [showVideo, setShowVideo] = useState(isReceivingVideo);
+  const [hasCamera, setHasCamera] = useState(false);
 
   const ref = useRef();
+
+  useEffect(() => {
+    async function checkForCamera() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasCamera = devices.some(device => 'videoinput' === device.kind);
+
+      setHasCamera(hasCamera);
+    }
+
+    checkForCamera();
+  }, []);
 
   useEffect(() => {
     ref.current.srcObject = stream;
@@ -127,9 +139,14 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
             <CallEndIcon />
           </Fab>
 
-          <Fab color="secondary" aria-label="add" onClick={handleVideoChange}>
-            {showVideo ? <VideocamOffIcon /> : <VideocamIcon />}
-          </Fab>
+          {
+            hasCamera ? (
+                <Fab color="secondary" aria-label="add" onClick={handleVideoChange}>
+                  {showVideo ? <VideocamOffIcon /> : <VideocamIcon />}
+                </Fab>
+              )
+              : null
+          }
         </div>
 
       </Paper>
