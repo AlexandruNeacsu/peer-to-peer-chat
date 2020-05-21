@@ -53,4 +53,6 @@ export const CALL_EVENTS = {
   VIDEO: "VIDEO",
   ACCEPTED: "ACCEPTED",
   CLOSE: "CLOSE",
+  TRACK: "TRACK",
+
 };

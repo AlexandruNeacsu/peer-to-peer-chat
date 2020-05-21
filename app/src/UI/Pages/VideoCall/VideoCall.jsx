@@ -4,11 +4,11 @@ import Paper from "@material-ui/core/Paper";
 import { makeStyles } from "@material-ui/core/styles";
 import CallEndIcon from "@material-ui/icons/CallEnd";
 import MicOffIcon from "@material-ui/icons/MicOff";
-import MicIcon from '@material-ui/icons/Mic';
+import MicIcon from "@material-ui/icons/Mic";
 import TabUnselectedIcon from "@material-ui/icons/TabUnselected";
 import AspectRatioIcon from "@material-ui/icons/AspectRatio";
-import VideocamIcon from '@material-ui/icons/Videocam';
-import VideocamOffIcon from '@material-ui/icons/VideocamOff';
+import VideocamIcon from "@material-ui/icons/Videocam";
+import VideocamOffIcon from "@material-ui/icons/VideocamOff";
 import Fab from "@material-ui/core/Fab";
 import IconButton from "@material-ui/core/IconButton";
 import UserAvatar from "../../Components/UserAvatar";
@@ -56,7 +56,7 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
 
   const [expanded, setExpanded] = useState(false);
   const [hasSound, setHasSound] = useState(true);
-  const [showVideo, setShowVideo] = useState(isReceivingVideo);
+  const [showVideo, setShowVideo] = useState(false);
   const [hasCamera, setHasCamera] = useState(false);
 
   const ref = useRef();
@@ -64,7 +64,7 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
   useEffect(() => {
     async function checkForCamera() {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const hasCamera = devices.some(device => 'videoinput' === device.kind);
+      const hasCamera = devices.some(device => device.kind === "videoinput");
 
       setHasCamera(hasCamera);
     }
@@ -75,7 +75,7 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
   useEffect(() => {
     ref.current.srcObject = stream;
     ref.current.play();
-  }, [stream]);
+  }, [isReceivingVideo, stream]);
 
 
   const handleMicrophoneChange = useCallback(() => {
@@ -97,9 +97,6 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
       return newValue;
     });
   }, [onVideoChange]);
-
-  console.log(isReceivingVideo)
-
 
   return (
     <Draggable bounds={bounds} position={expanded ? { x: 0, y: 0 } : undefined} disabled={expanded}>
@@ -141,10 +138,10 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
 
           {
             hasCamera ? (
-                <Fab color="secondary" aria-label="add" onClick={handleVideoChange}>
-                  {showVideo ? <VideocamOffIcon /> : <VideocamIcon />}
-                </Fab>
-              )
+              <Fab color="secondary" aria-label="add" onClick={handleVideoChange}>
+                {showVideo ? <VideocamOffIcon /> : <VideocamIcon />}
+              </Fab>
+            )
               : null
           }
         </div>

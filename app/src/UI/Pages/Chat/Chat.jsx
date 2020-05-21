@@ -167,29 +167,28 @@ function Chat() {
             if (!contact) {
               // TODO
             } else {
-              const isReceivingVideo = peerStream.getVideoTracks()[0];
-
-              console.log(isReceivingVideo);
-
               setCall({
                 contact,
                 peerStream,
-                isReceivingVideo,
+                isReceivingVideo: peerStream.getVideoTracks().length,
               });
               setIsCalled(true);
             }
           })
           .on(CALL_EVENTS.CALL, (contact, ownStream, peerStream) => {
-            const isReceivingVideo = peerStream.getVideoTracks()[0];
-
-            console.log(isReceivingVideo);
-
             setCall({
               contact,
               ownStream,
               peerStream,
-              isReceivingVideo,
+              isReceivingVideo: peerStream.getVideoTracks().length,
             });
+          })
+          .on(CALL_EVENTS.TRACK, (track, peerStream) => {
+            setCall(prevValue => ({
+              ...prevValue,
+              peerStream,
+              isReceivingVideo: peerStream.getVideoTracks().length,
+            }));
           })
           .on(CALL_EVENTS.ACCEPTED, () => console.log("ACC") || setIsInCall(true))
           .on(CALL_EVENTS.CLOSE, () => {

@@ -122,6 +122,8 @@ export default class ChatProtocol extends BaseProtocol {
       peerStream => console.log("receive stream") || this.emit(CALL_EVENTS.CALLED, this._peerId.toB58String(), peerStream),
     );
 
+    this._peer.on("track", (track, peerStream) => this.emit(CALL_EVENTS.TRACK, track, peerStream))
+
     this._peer.on("close", () => {
       this.hangUp();
       this.emit(CALL_EVENTS.CLOSE);
@@ -170,6 +172,9 @@ export default class ChatProtocol extends BaseProtocol {
         peerStream => console.log("call stream") || this.emit(CALL_EVENTS.CALL, user, this._stream, peerStream),
       );
 
+      this._peer.on("track", (track, peerStream) => this.emit(CALL_EVENTS.TRACK, track, peerStream))
+
+
       this._peer.on("close", () => this.emit(CALL_EVENTS.CLOSE));
 
       this._peer.on("error", (error) => {
@@ -206,10 +211,21 @@ export default class ChatProtocol extends BaseProtocol {
     }
   };
 
-  changeVideo = (isEnabled) => {
+  changeVideo = async (isEnabled) => {
+    console.log(this._stream.getVideoTracks())
     if (this._peer && this._stream) {
-      // eslint-disable-next-line no-param-reassign,no-return-assign
-      this._stream.getVideoTracks().forEach(track => track.enabled = isEnabled);
+      if (this._stream.getVideoTracks().length) {
+        // eslint-disable-next-line no-param-reassign,no-return-assign
+        this._stream.getVideoTracks().forEach(track => track.enabled = isEnabled);
+      } else if (isEnabled) {
+        const videoStream = await this._buildStream(true, false);
+        videoStream.getVideoTracks().forEach(track => {
+          this._peer.addTrack(track, this._stream);
+          this._stream.addTrack(track);
+
+          videoStream.removeTrack(track);
+        });
+      }
     }
   }
 
