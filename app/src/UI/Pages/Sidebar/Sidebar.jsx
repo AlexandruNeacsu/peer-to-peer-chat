@@ -50,26 +50,26 @@ const useStyles = makeStyles(theme => ({
 
 
 function Sidebar({
-  username,
-  isOnline,
-  contacts,
-  selectedContact,
-  handleSelectContact,
-  onAddContact,
-  receivedRequests,
-  sentRequests,
-  handleAcceptRequest,
-  handleRejectRequest,
-  call,
-  children,
-}) {
+                   username,
+                   isOnline,
+                   contacts,
+                   selectedContact,
+                   handleSelectContact,
+                   onAddContact,
+                   receivedRequests,
+                   sentRequests,
+                   handleAcceptRequest,
+                   handleRejectRequest,
+                   call,
+                   children,
+                 }) {
   const classes = useStyles();
 
   const [anchorEl, setAnchorEl] = useState(null);
   // TODO: show a message or something if not connected to a peer
 
   return (
-    <div className={classes.contentRoot}>
+    <div id="sidebar" className={classes.contentRoot}>
       <AppBar position="fixed" className={classes.appBar}>
         <Toolbar>
           {
@@ -80,7 +80,13 @@ function Sidebar({
             ) : (
               <div className={classes.toolbarItems}>
                 <div className={classes.toolbarItemsLeft}>
-                  <UserAvatar username={selectedContact.username} image={selectedContact.avatar} showUsername />
+                  <UserAvatar
+                    showUsername
+                    username={selectedContact.username}
+                    showBadge
+                    isOnline={selectedContact.isConnected}
+                    image={selectedContact.avatar}
+                  />
                 </div>
 
                 <div>

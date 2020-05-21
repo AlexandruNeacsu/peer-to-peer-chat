@@ -295,6 +295,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
   return (
     <div
+      id="contact-page"
       className={classes.content}
       onDrop={handleDrop}
       onDragOver={handleDragOver}

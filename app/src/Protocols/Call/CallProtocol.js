@@ -1,84 +1,222 @@
 import SimplePeer from "simple-peer";
 import BaseProtocol from "../BaseProtocol";
 import { receiveData, sendData } from "../../Connection";
-import PROTOCOLS, { CALL_EVENTS } from "../constants";
+import PROTOCOLS, { CALL_EVENTS, CALL_MESSAGES } from "../constants";
 
 
 export default class ChatProtocol extends BaseProtocol {
+  constructor(node, database) {
+    super(node, database);
+
+    /** type MediaStream */
+    this._stream = null;
+
+    /** type SimplePeer */
+    this._peer = null;
+
+    this._peerId = null;
+  }
+
   handler = async ({ connection, stream }) => {
-    // const database = DatabaseHandler.getDatabase();
-    // const user = await database.users.get({ id: connection.remotePeer.toB58String() });
-
-    // if (!user) {
-    //   // TODO: do we close the connection afther the message?
-    //   await sendData(stream.sink, ["REFUSED"]);
-    //
-    //   // TODO: is ok?
-    //   await node.hangUp(connection.remotePeer);
-    // } else {
     try {
-      let signalData = await receiveData(stream.source);
-      signalData = JSON.parse(signalData.shift().toString());
+      if (this._peerId && this._peerId.toB58String() === connection.remotePeer.toB58String()) {
+        // we already have a connection. Refuse all other
 
-      const peer = new SimplePeer({ initiator: false, trickle: false });
-      peer.signal(signalData);
+        await this._handleExistingCall(stream);
 
-      peer.on("signal", async data => {
-        await sendData(stream.sink, [JSON.stringify(data)]);
-      });
+        return;
+      }
 
-      peer.on("stream", videoStream => this.emit(CALL_EVENTS.CALLED, connection.remotePeer.toB58String(), videoStream));
+      if (this._peerId) {
+        await sendData(stream.sink, [CALL_MESSAGES.REFUSED]);
+
+        await this.node.hangUp(connection.remotePeer);
+
+        return;
+      }
+
+      if (!(await this._checkIsContact(stream, connection))) {
+        return;
+      }
+
+      this._peerId = connection.remotePeer;
+
+      await this._handleNewCall(stream);
     } catch (error) {
       // TODO
       console.log(error);
       console.log(error.message);
     }
-    // }
   };
+
+  _checkIsContact = async (stream, connection) => {
+    const user = await this.database.users.get({ id: connection.remotePeer.toB58String() });
+
+    if (!user) {
+      // TODO: do we close the connection afther the message?
+      await sendData(stream.sink, [CALL_MESSAGES.REFUSED]);
+
+      // TODO: is ok?
+      await this.node.hangUp(connection.remotePeer);
+
+      return false;
+    }
+
+    return true;
+  }
+
+  _handleExistingCall = async (stream) => {
+
+    const message = await receiveData(stream.source);
+
+    const type = message.shift().toString();
+
+    switch (type) {
+      case CALL_MESSAGES.SIGNAL: {
+        // we sent an offer and we now accept it
+
+        let data = message.shift().toString();
+        data = JSON.parse(data);
+        console.log(data);
+
+        this._peer.signal(data);
+
+        break;
+      }
+
+      case CALL_MESSAGES.ACCEPTED: {
+        this.emit(CALL_EVENTS.ACCEPTED);
+
+        break;
+      }
+
+      default:
+        console.log("Received unknows message!");
+    }
+  }
+
+  _handleNewCall = async (stream) => {
+    await sendData(stream.sink, [CALL_MESSAGES.OK]);
+
+    this._stream = await this._buildStream(false, true);
+
+    this._peer = new SimplePeer({ initiator: false, stream: this._stream });
+    this._peer.on("signal", async responseSignal => {
+      const response = JSON.stringify(responseSignal);
+      console.log([response]);
+
+      const { stream: responseStream } = await this.node.dialProtocol(this._peerId, PROTOCOLS.CALL);
+      await sendData(responseStream.sink, [CALL_MESSAGES.SIGNAL, response]);
+    });
+
+    const data = await receiveData(stream.source);
+
+    let signalData = data.shift().toString();
+    console.log(signalData)
+    signalData = JSON.parse(signalData);
+
+    this._peer.signal(signalData);
+
+    this._peer.on(
+      "stream",
+      peerStream => console.log("receive stream") || this.emit(CALL_EVENTS.CALLED, this._peerId.toB58String(), peerStream),
+    );
+
+    this._peer.on("close", () => {
+      this.hangUp();
+      this.emit(CALL_EVENTS.CLOSE);
+    });
+  }
 
   call = async (user, video = false) => {
     // TODO: maybe combine sendFunctions
     if (!user) {
       throw new Error(); // TODO
     }
+
     try {
-      // const peerId = PeerId.createFromB58String(user);
+      this._stream = await this._buildStream(video, true);
 
-      // const initialMessage = {
-      //   type: "CALL",
-      //   username: user.username,
-      // };
+      const { stream } = await this.node.dialProtocol(user.peerId, PROTOCOLS.CALL);
 
-      const { stream } = await this.node.dialProtocol(user.peerId, PROTOCOLS.CALL); // todo: works withouth info?
-      const videoStream = await navigator.mediaDevices.getUserMedia({
-        video,
-        audio: true,
-      });
+      const response = await receiveData(stream.source);
+      const isOk = response.shift().toString();
 
-      const peer = new SimplePeer({ initiator: true, stream: videoStream, trickle: false });
+      if (isOk !== CALL_MESSAGES.OK) {
+        return;
+      }
 
-      peer.on("signal", async data => {
-        await sendData(stream.sink, [JSON.stringify(data)]);
+      this._peer = new SimplePeer({ initiator: true, stream: this._stream });
 
-        let signalData = await receiveData(stream.source);
+      let initialSent = false;
+      this._peer.on("signal", async data => {
+        const stringified = JSON.stringify(data);
 
-        if (signalData.length) {
-          signalData = JSON.parse(signalData.shift().toString());
-          console.log(signalData)
+        if (!initialSent) {
+          await sendData(stream.sink, [stringified]);
+          initialSent = true;
 
-          peer.signal(signalData);
+          this._peerId = user.peerId;
+        } else {
+          // offer sent, sent all new signal events on new stream
+          const { stream: newStream } = await this.node.dialProtocol(user.peerId, PROTOCOLS.CALL);
+          await sendData(newStream.sink, [CALL_MESSAGES.SIGNAL, stringified]);
         }
       });
 
-      this.emit(CALL_EVENTS.CALL, user, videoStream);
 
-      return videoStream;
+      this._peer.on(
+        "stream",
+        peerStream => console.log("call stream") || this.emit(CALL_EVENTS.CALL, user, this._stream, peerStream),
+      );
+
+      this._peer.on("close", () => this.emit(CALL_EVENTS.CLOSE));
+
     } catch (error) {
       // TODO, maybe try to resend, show disconnected, etc
       console.log(error);
       console.log(error.message);
-
-      return null;
     }
   };
+
+  accept = async () => {
+    const { stream: newStream } = await this.node.dialProtocol(this._peerId, PROTOCOLS.CALL);
+    await sendData(newStream.sink, [CALL_MESSAGES.ACCEPTED]);
+  }
+
+  hangUp = () => {
+    if (this._peer && this._stream) {
+      this._stream.getTracks().forEach(track => track.stop());
+      this._peerId = null;
+
+      this._peer.destroy();
+    }
+  }
+
+  changeMicrophone = (isEnabled) => {
+    if (this._peer && this._stream) {
+      // eslint-disable-next-line no-param-reassign,no-return-assign
+      this._stream.getAudioTracks().forEach(track => track.enabled = isEnabled);
+    }
+  };
+
+  changeVideo = (isEnabled) => {
+    if (this._peer && this._stream) {
+      // eslint-disable-next-line no-param-reassign,no-return-assign
+      this._stream.getVideoTracks().forEach(track => track.enabled = isEnabled);
+    }
+  }
+
+  /**
+   *
+   * @param video
+   * @param audio
+   * @returns {Promise<MediaStream>}
+   */
+  _buildStream = async (video, audio) => {
+    return navigator.mediaDevices.getUserMedia({
+      video,
+      audio,
+    });
+  }
 }

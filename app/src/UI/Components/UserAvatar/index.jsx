@@ -3,6 +3,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import Avatar from "@material-ui/core/Avatar";
 import AccountCircleIcon from "@material-ui/icons/AccountCircle";
 import Typography from "@material-ui/core/Typography";
+import clsx from "clsx";
 import StatusBadge from "./StatusBadge";
 
 
@@ -19,13 +20,20 @@ const useStyles = makeStyles(theme => ({
 }));
 
 
-function UserAvatar({ username, image, isOnline = false, showBadge = false, showUsername = false }) {
+function UserAvatar({
+  username,
+  image,
+  isOnline = false,
+  showBadge = false,
+  showUsername = false,
+  className,
+}) {
   const classes = useStyles();
 
   const formatedUsername = username && username.toUpperCase();
 
   return (
-    <div className={classes.container}>
+    <div className={clsx(classes.container, className)}>
       {
         showBadge
           ? (

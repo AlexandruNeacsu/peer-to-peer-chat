@@ -39,7 +39,18 @@ export const CHAT_EVENTS = {
   SENT: "sent",
 };
 
+export const CALL_MESSAGES = {
+  ACCEPTED: "ACCEPTED",
+  REFUSED: "REFUSED",
+  OK: "OK",
+  SIGNAL: "SIGNAL",
+};
+
 export const CALL_EVENTS = {
   CALL: "CALL",
   CALLED: "CALLED",
+  MUTE: "MUTE",
+  VIDEO: "VIDEO",
+  ACCEPTED: "ACCEPTED",
+  CLOSE: "CLOSE",
 };

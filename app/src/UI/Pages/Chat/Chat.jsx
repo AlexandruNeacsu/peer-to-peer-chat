@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import PeerId from "peer-id";
 import ContactPage from "../ContactPage";
 import AddContactDialog from "./AddContactDialog";
@@ -57,9 +57,15 @@ function Chat() {
   // TODO: show a message or something if not connected to a peer
   const [isConnectedToPeers, setIsConnectedToPeer] = useState(false);
   const [ownNode, setOwnNode] = useState(null);
-  const [caller, setCaller] = useState(null);
-  const [inCall, setInCall] = useState(false);
+
+  /* CALL STATE */
+  const [call, setCall] = useState(null);
+  const [isInCall, setIsInCall] = useState(false);
   const [isCalled, setIsCalled] = useState(false);
+
+  const [isCalling, setIsCalling] = useState(false);
+  const [isShowingVideo, setIsShowingVide] = useState(false);
+
 
   /* INITIALIZE NODE */
   useEffect(() => {
@@ -155,23 +161,44 @@ function Chat() {
 
         node
           .getImplementation(PROTOCOLS.CALL)
-          .on(CALL_EVENTS.CALLED, (callerId, stream) => {
+          .on(CALL_EVENTS.CALLED, (callerId, peerStream) => {
             const contact = contacts.find(c => c.id === callerId);
 
             if (!contact) {
               // TODO
             } else {
-              const hasVideo = stream.getVideoTracks()[0];
+              const isReceivingVideo = peerStream.getVideoTracks()[0];
 
-              setCaller({
+              console.log(isReceivingVideo);
+
+              setCall({
                 contact,
-                stream,
-                hasVideo,
+                peerStream,
+                isReceivingVideo,
               });
               setIsCalled(true);
             }
-          });
+          })
+          .on(CALL_EVENTS.CALL, (contact, ownStream, peerStream) => {
+            const isReceivingVideo = peerStream.getVideoTracks()[0];
 
+            console.log(isReceivingVideo);
+
+            setCall({
+              contact,
+              ownStream,
+              peerStream,
+              isReceivingVideo,
+            });
+          })
+          .on(CALL_EVENTS.ACCEPTED, () => console.log("ACC") || setIsInCall(true))
+          .on(CALL_EVENTS.CLOSE, () => {
+            console.log("CLOSE")
+
+            setIsInCall(false);
+            setIsCalled(false);
+            setCall(null);
+          });
 
         await node.start();
 
@@ -186,7 +213,7 @@ function Chat() {
     if (!ownNode) {
       getOwnNode();
     }
-  }, [ownNode, contacts, selectedContact]);
+  }, [ownNode, contacts, selectedContact, call]);
 
   /* LOAD DATABASE DATA */
   useEffect(() => {
@@ -272,7 +299,9 @@ function Chat() {
   const handleCallResponse = (willAnswer) => {
     if (willAnswer) {
       setIsCalled(false);
-      setInCall(true);
+      setIsInCall(true);
+
+      ownNode.getImplementation(PROTOCOLS.CALL).accept();
     }
   };
 
@@ -292,17 +321,25 @@ function Chat() {
             handleSelectContact={handleSelectContact}
             receivedRequests={receivedRequests}
             sentRequests={sentRequests}
-            call={() => ownNode.getImplementation(PROTOCOLS.CALL).call(selectedContact)}
+            call={() => ownNode.getImplementation(PROTOCOLS.CALL).call(selectedContact, isShowingVideo)}
           >
 
             {
-              inCall && caller ? (
-                <VideoCall stream={caller.stream} isVideo={caller.hasVideo} />
-              ): null
+              isInCall && call ? (
+                <VideoCall
+                  bounds="body"
+                  stream={call.peerStream}
+                  isReceivingVideo={call.isReceivingVideo}
+                  contact={call.contact}
+                  onEnd={ownNode.getImplementation(PROTOCOLS.CALL).hangUp}
+                  onVideoChange={ownNode.getImplementation(PROTOCOLS.CALL).changeVideo}
+                  onMicrophoneChange={ownNode.getImplementation(PROTOCOLS.CALL).changeMicrophone}
+                />
+              ) : null
             }
 
             {
-              selectedContact && !caller
+              selectedContact
                 ? (
                   <ContactPage
                     selectedContact={selectedContact}
@@ -312,7 +349,6 @@ function Chat() {
                 )
                 : "TODO"
             }
-
 
             <AddContactDialog
               open={modalOpen}
@@ -324,7 +360,7 @@ function Chat() {
               isCalled ? (
                   <CallAlert
                     open={isCalled}
-                    contact={caller}
+                    contact={call.contact}
                     onClose={handleCallResponse}
                   />
                 )
