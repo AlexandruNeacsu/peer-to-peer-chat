@@ -15,22 +15,26 @@ import UserAvatar from "../../Components/UserAvatar";
 
 const useStyles = makeStyles(theme => ({
   small: {
+    display: "flex",
+    flexDirection: "column",
     position: "absolute",
     padding: theme.spacing(1),
-    width: "300px",
-    height: "300px",
+    maxWidth: "300px",
+    maxHeight: "300px",
     zIndex: theme.zIndex.appBar + 1,
   },
   large: {
+    display: "flex",
+    flexDirection: "column",
     position: "absolute",
     padding: theme.spacing(1),
-    width: "100%",
-    height: "100%",
+    width: "100vw",
+    height: "100vh",
     zIndex: theme.zIndex.appBar + 1,
   },
-  sizeControl: {
-    position: "absolute",
-    right: 0,
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
   },
   controls: {
     display: "flex",
@@ -47,6 +51,11 @@ const useStyles = makeStyles(theme => ({
     left: "50%",
     position: "absolute",
     transform: "translate(-50 %, -50 %)",
+  },
+  video: {
+    maxWidth: "100%",
+    height: "auto",
+    flexGrow: 1,
   },
 }));
 
@@ -102,20 +111,22 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
     <Draggable bounds={bounds} position={expanded ? { x: 0, y: 0 } : undefined} disabled={expanded}>
       <Paper className={expanded ? classes.large : classes.small} elevation={3} variant="outlined">
 
-        <IconButton className={classes.sizeControl} onClick={() => setExpanded(prevState => !prevState)}>
-          {expanded ? <TabUnselectedIcon /> : <AspectRatioIcon />}
-        </IconButton>
+        <div className={classes.header}>
+          <UserAvatar
+            className={expanded && !isReceivingVideo ? classes.avatar : undefined}
+            username={contact.username}
+            image={contact.avatar}
+            showUsername
+          />
 
-        <UserAvatar
-          className={expanded && !isReceivingVideo ? classes.avatar : undefined}
-          username={contact.username}
-          image={contact.avatar}
-          showUsername
-        />
+          <IconButton onClick={() => setExpanded(prevState => !prevState)}>
+            {expanded ? <TabUnselectedIcon /> : <AspectRatioIcon />}
+          </IconButton>
+        </div>
 
         {
           isReceivingVideo ? (
-            <video ref={ref} autoPlay width="128" height="128" />
+            <video autoPlay className={classes.video} ref={ref} />
           ) : (
             <audio ref={ref} autoPlay />
           )
@@ -138,10 +149,10 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
 
           {
             hasCamera ? (
-              <Fab color="secondary" aria-label="add" onClick={handleVideoChange}>
-                {showVideo ? <VideocamOffIcon /> : <VideocamIcon />}
-              </Fab>
-            )
+                <Fab color="secondary" aria-label="add" onClick={handleVideoChange}>
+                  {showVideo ? <VideocamOffIcon /> : <VideocamIcon />}
+                </Fab>
+              )
               : null
           }
         </div>
