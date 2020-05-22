@@ -69,26 +69,14 @@ const useStyles = makeStyles(theme => ({
 }));
 
 
-const VideoCall = ({ stream, contact, isReceivingVideo, isShowingVideo, bounds, onEnd, onVideoChange, onMicrophoneChange }) => {
+const VideoCall = ({ stream, contact, isReceivingVideo, isShowingVideo, hasCamera, bounds, onEnd, onVideoChange, onMicrophoneChange }) => {
   const classes = useStyles();
 
   const [expanded, setExpanded] = useState(false);
   const [hasSound, setHasSound] = useState(true);
   const [showVideo, setShowVideo] = useState(isShowingVideo);
-  const [hasCamera, setHasCamera] = useState(false);
 
   const ref = useRef();
-
-  useEffect(() => {
-    async function checkForCamera() {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const hasCamera = devices.some(device => device.kind === "videoinput");
-
-      setHasCamera(hasCamera);
-    }
-
-    checkForCamera();
-  }, []);
 
   useEffect(() => {
     ref.current.srcObject = stream;

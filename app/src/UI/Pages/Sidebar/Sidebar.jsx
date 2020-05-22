@@ -62,6 +62,7 @@ function Sidebar({
   handleAcceptRequest,
   handleRejectRequest,
   call,
+  hasCamera,
   children,
 }) {
   const classes = useStyles();
@@ -94,9 +95,15 @@ function Sidebar({
                   <IconButton disabled={!selectedContact.isConnected} onClick={() => call(false)}>
                     <CallIcon />
                   </IconButton>
-                  <IconButton disabled={!selectedContact.isConnected} onClick={() => call(true)}>
-                    <VideoCallIcon />
-                  </IconButton>
+                  {
+                    hasCamera
+                      ? (
+                        <IconButton disabled={!selectedContact.isConnected} onClick={() => call(true)}>
+                          <VideoCallIcon />
+                        </IconButton>
+                      )
+                      : null
+                  }
                 </div>
               </div>
             )

@@ -62,9 +62,18 @@ function Chat() {
   const [call, setCall] = useState(null);
   const [isInCall, setIsInCall] = useState(false);
   const [isCalled, setIsCalled] = useState(false);
+  const [hasCamera, setHasCamera] = useState(false);
 
-  const [isCalling, setIsCalling] = useState(false);
+  useEffect(() => {
+    async function checkForCamera() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasCamera = devices.some(device => device.kind === "videoinput");
 
+      setHasCamera(hasCamera);
+    }
+
+    checkForCamera();
+  }, []);
 
   /* INITIALIZE NODE */
   useEffect(() => {
@@ -321,6 +330,7 @@ function Chat() {
             receivedRequests={receivedRequests}
             sentRequests={sentRequests}
             call={(video) => ownNode.getImplementation(PROTOCOLS.CALL).call(selectedContact, video)}
+            hasCamera={hasCamera}
           >
 
             {
