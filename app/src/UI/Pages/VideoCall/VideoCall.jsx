@@ -12,6 +12,7 @@ import VideocamOffIcon from "@material-ui/icons/VideocamOff";
 import Fab from "@material-ui/core/Fab";
 import IconButton from "@material-ui/core/IconButton";
 import UserAvatar from "../../Components/UserAvatar";
+import red from "@material-ui/core/colors/red";
 
 const useStyles = makeStyles(theme => ({
   small: {
@@ -56,6 +57,9 @@ const useStyles = makeStyles(theme => ({
     maxWidth: "100%",
     height: "auto",
     flexGrow: 1,
+  },
+  red: {
+    color: red[500],
   },
 }));
 
@@ -140,17 +144,17 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
             aria-label="add"
             onClick={handleMicrophoneChange}
           >
-            {hasSound ? <MicIcon /> : <MicOffIcon />}
+            {hasSound ? <MicIcon /> : <MicOffIcon className={classes.red} />}
           </Fab>
 
           <Fab className={classes.controlLeftMargin} color="secondary" aria-label="add" onClick={onEnd}>
-            <CallEndIcon />
+            <CallEndIcon className={classes.red} />
           </Fab>
 
           {
             hasCamera ? (
                 <Fab color="secondary" aria-label="add" onClick={handleVideoChange}>
-                  {showVideo ? <VideocamOffIcon /> : <VideocamIcon />}
+                  {showVideo ? <VideocamOffIcon className={classes.red} /> : <VideocamIcon />}
                 </Fab>
               )
               : null
