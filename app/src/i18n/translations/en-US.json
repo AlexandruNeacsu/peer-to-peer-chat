@@ -18,6 +18,7 @@
     }
   },
   "Contacts": {
+    "ContactList": "Contacts",
     "Search": "Search contact",
     "Add": "Add contact"
   },

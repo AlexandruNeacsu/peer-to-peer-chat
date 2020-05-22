@@ -27,6 +27,7 @@
     }
   },
   "Contacts": {
+    "ContactList": "Contacte",
     "Contacts": "Contacte",
     "Search": "Cauta contact",
     "Add": "Adauga contact"

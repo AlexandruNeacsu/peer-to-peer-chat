@@ -5,6 +5,7 @@ import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
 import GroupIcon from "@material-ui/icons/Group";
 import CallIcon from "@material-ui/icons/Call";
+import VideoCallIcon from "@material-ui/icons/VideoCall";
 import Badge from "@material-ui/core/Badge";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
@@ -50,19 +51,19 @@ const useStyles = makeStyles(theme => ({
 
 
 function Sidebar({
-                   username,
-                   isOnline,
-                   contacts,
-                   selectedContact,
-                   handleSelectContact,
-                   onAddContact,
-                   receivedRequests,
-                   sentRequests,
-                   handleAcceptRequest,
-                   handleRejectRequest,
-                   call,
-                   children,
-                 }) {
+  username,
+  isOnline,
+  contacts,
+  selectedContact,
+  handleSelectContact,
+  onAddContact,
+  receivedRequests,
+  sentRequests,
+  handleAcceptRequest,
+  handleRejectRequest,
+  call,
+  children,
+}) {
   const classes = useStyles();
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -90,8 +91,11 @@ function Sidebar({
                 </div>
 
                 <div>
-                  <IconButton onClick={call}>
+                  <IconButton disabled={!selectedContact.isConnected} onClick={() => call(false)}>
                     <CallIcon />
+                  </IconButton>
+                  <IconButton disabled={!selectedContact.isConnected} onClick={() => call(true)}>
+                    <VideoCallIcon />
                   </IconButton>
                 </div>
               </div>

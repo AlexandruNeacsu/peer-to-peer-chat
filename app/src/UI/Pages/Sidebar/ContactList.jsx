@@ -97,7 +97,7 @@ export default function ContactList({ contacts, selectedContact, setSelectedCont
 
       <div className={classes.subheader}>
         <Typography variant="h3" color="textPrimary">
-          {t("Contacts.Add")}
+          {t("Contacts.ContactList")}
         </Typography>
         <IconButton className={classes.contactAddButton} onClick={onAdd}>
           <PersonAddIcon />

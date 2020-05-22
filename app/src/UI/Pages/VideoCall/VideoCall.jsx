@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Draggable from "react-draggable";
+import clsx from "clsx";
 import Paper from "@material-ui/core/Paper";
 import { makeStyles } from "@material-ui/core/styles";
 import CallEndIcon from "@material-ui/icons/CallEnd";
@@ -13,21 +14,22 @@ import Fab from "@material-ui/core/Fab";
 import IconButton from "@material-ui/core/IconButton";
 import UserAvatar from "../../Components/UserAvatar";
 import red from "@material-ui/core/colors/red";
+import green from "@material-ui/core/colors/green";
 
 const useStyles = makeStyles(theme => ({
   small: {
     display: "flex",
     flexDirection: "column",
-    position: "absolute",
+    position: "fixed",
     padding: theme.spacing(1),
-    maxWidth: "300px",
-    maxHeight: "300px",
+    width: "300px",
+    height: "300px",
     zIndex: theme.zIndex.appBar + 1,
   },
   large: {
     display: "flex",
     flexDirection: "column",
-    position: "absolute",
+    position: "fixed",
     padding: theme.spacing(1),
     width: "100vw",
     height: "100vh",
@@ -59,17 +61,20 @@ const useStyles = makeStyles(theme => ({
     flexGrow: 1,
   },
   red: {
-    color: red[500],
+    backgroundColor: red[500],
+  },
+  green: {
+    backgroundColor: green[500],
   },
 }));
 
 
-const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoChange, onMicrophoneChange }) => {
+const VideoCall = ({ stream, contact, isReceivingVideo, isShowingVideo, bounds, onEnd, onVideoChange, onMicrophoneChange }) => {
   const classes = useStyles();
 
   const [expanded, setExpanded] = useState(false);
   const [hasSound, setHasSound] = useState(true);
-  const [showVideo, setShowVideo] = useState(false);
+  const [showVideo, setShowVideo] = useState(isShowingVideo);
   const [hasCamera, setHasCamera] = useState(false);
 
   const ref = useRef();
@@ -91,25 +96,29 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
   }, [isReceivingVideo, stream]);
 
 
-  const handleMicrophoneChange = useCallback(() => {
-    setHasSound(prevState => {
-      const newValue = !prevState;
+  const handleMicrophoneChange = useCallback(async () => {
+    try {
+      const newValue = await onMicrophoneChange();
 
-      onMicrophoneChange(newValue);
+      setHasSound(newValue);
+    } catch (error) {
+      // TODO
+      console.log(error);
+      console.log(error.message())
+    }
+  }, [hasCamera, onMicrophoneChange]);
 
-      return newValue;
-    });
-  }, [onMicrophoneChange]);
+  const handleVideoChange = useCallback(async () => {
+    try {
+      const newValue = await onVideoChange();
 
-  const handleVideoChange = useCallback(() => {
-    setShowVideo(prevState => {
-      const newValue = !prevState;
-
-      onVideoChange(newValue);
-
-      return newValue;
-    });
-  }, [onVideoChange]);
+      setShowVideo(newValue);
+    } catch (error) {
+      // TODO
+      console.log(error);
+      console.log(error.message);
+    }
+  }, [showVideo, onVideoChange]);
 
   return (
     <Draggable bounds={bounds} position={expanded ? { x: 0, y: 0 } : undefined} disabled={expanded}>
@@ -136,25 +145,26 @@ const VideoCall = ({ stream, contact, isReceivingVideo, bounds, onEnd, onVideoCh
           )
         }
 
-
+        {/* TODO add aria-label to fabs */}
         <div className={classes.controls}>
           <Fab
-            className={classes.controlLeftMargin}
+            className={clsx({ [classes.controlLeftMargin]: true, [classes.red]: !hasSound, [classes.green]: hasSound })}
             color="secondary"
             aria-label="add"
             onClick={handleMicrophoneChange}
           >
-            {hasSound ? <MicIcon /> : <MicOffIcon className={classes.red} />}
+            {hasSound ? <MicIcon /> : <MicOffIcon />}
           </Fab>
 
-          <Fab className={classes.controlLeftMargin} color="secondary" aria-label="add" onClick={onEnd}>
-            <CallEndIcon className={classes.red} />
+          <Fab className={clsx(classes.controlLeftMargin, classes.red)} onClick={onEnd}>
+            <CallEndIcon />
           </Fab>
 
           {
-            hasCamera ? (
-                <Fab color="secondary" aria-label="add" onClick={handleVideoChange}>
-                  {showVideo ? <VideocamOffIcon className={classes.red} /> : <VideocamIcon />}
+            hasCamera
+              ? (
+                <Fab className={showVideo ? classes.green : classes.red} onClick={handleVideoChange}>
+                  {showVideo ? <VideocamIcon /> : <VideocamOffIcon />}
                 </Fab>
               )
               : null

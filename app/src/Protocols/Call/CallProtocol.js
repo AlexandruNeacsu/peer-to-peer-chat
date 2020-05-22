@@ -204,29 +204,49 @@ export default class ChatProtocol extends BaseProtocol {
     }
   }
 
-  changeMicrophone = (isEnabled) => {
+  changeMicrophone = () => {
     if (this._peer && this._stream) {
-      // eslint-disable-next-line no-param-reassign,no-return-assign
-      this._stream.getAudioTracks().forEach(track => track.enabled = isEnabled);
+      let isEnabled = false;
+      this._stream.getAudioTracks().forEach(track => {
+        isEnabled = !track.enabled;
+
+        // eslint-disable-next-line no-param-reassign
+        track.enabled = !track.enabled;
+      });
+
+      return isEnabled;
     }
   };
 
-  changeVideo = async (isEnabled) => {
+  changeVideo = async () => {
     console.log(this._stream.getVideoTracks())
+
     if (this._peer && this._stream) {
       if (this._stream.getVideoTracks().length) {
-        // eslint-disable-next-line no-param-reassign,no-return-assign
-        this._stream.getVideoTracks().forEach(track => track.enabled = isEnabled);
-      } else if (isEnabled) {
-        const videoStream = await this._buildStream(true, false);
-        videoStream.getVideoTracks().forEach(track => {
-          this._peer.addTrack(track, this._stream);
-          this._stream.addTrack(track);
+        let isEnabled = false;
 
-          videoStream.removeTrack(track);
+        this._stream.getVideoTracks().forEach(track => {
+          isEnabled = !track.enabled;
+
+          // eslint-disable-next-line no-param-reassign
+          track.enabled = !track.enabled;
         });
+
+        return isEnabled;
       }
+
+      const videoStream = await this._buildStream(true, false);
+      videoStream.getVideoTracks().forEach(track => {
+        this._peer.addTrack(track, this._stream);
+        this._stream.addTrack(track);
+
+        videoStream.removeTrack(track);
+      });
+
+      return true;
     }
+
+    return "unable";
   }
 
   /**

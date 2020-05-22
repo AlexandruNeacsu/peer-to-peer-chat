@@ -64,7 +64,6 @@ function Chat() {
   const [isCalled, setIsCalled] = useState(false);
 
   const [isCalling, setIsCalling] = useState(false);
-  const [isShowingVideo, setIsShowingVide] = useState(false);
 
 
   /* INITIALIZE NODE */
@@ -181,6 +180,7 @@ function Chat() {
               ownStream,
               peerStream,
               isReceivingVideo: peerStream.getVideoTracks().length,
+              isShowingVideo: ownStream.getVideoTracks().length,
             });
           })
           .on(CALL_EVENTS.TRACK, (track, peerStream) => {
@@ -320,7 +320,7 @@ function Chat() {
             handleSelectContact={handleSelectContact}
             receivedRequests={receivedRequests}
             sentRequests={sentRequests}
-            call={() => ownNode.getImplementation(PROTOCOLS.CALL).call(selectedContact, isShowingVideo)}
+            call={(video) => ownNode.getImplementation(PROTOCOLS.CALL).call(selectedContact, video)}
           >
 
             {
@@ -329,6 +329,7 @@ function Chat() {
                   bounds="body"
                   stream={call.peerStream}
                   isReceivingVideo={call.isReceivingVideo}
+                  isShowingVideo={call.isShowingVideo}
                   contact={call.contact}
                   onEnd={ownNode.getImplementation(PROTOCOLS.CALL).hangUp}
                   onVideoChange={ownNode.getImplementation(PROTOCOLS.CALL).changeVideo}
