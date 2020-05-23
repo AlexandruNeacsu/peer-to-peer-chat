@@ -23,7 +23,7 @@ const CallAlert = ({ contact, open, onClose }) => {
 
   return (
     <Dialog
-      id="ringtone-menu"
+      id="call-alert"
       aria-labelledby="confirmation-dialog-title"
       maxWidth="xs"
       open={open}
@@ -35,7 +35,7 @@ const CallAlert = ({ contact, open, onClose }) => {
         paper: classes.paper,
       }}
     >
-      <DialogTitle id="confirmation-dialog-title">{t("Call.CallTitle", { username: contact.username })}</DialogTitle>
+      <DialogTitle id="confirmation-dialog-title">{t("Call.Alert.Title", { username: contact.username })}</DialogTitle>
       <DialogContent dividers>
         <UserAvatar image={contact.avatar} username={contact.username} showUsername />
       </DialogContent>
@@ -45,14 +45,14 @@ const CallAlert = ({ contact, open, onClose }) => {
           autoFocus
           onClick={() => onClose(true)}
           color="primary"
-          aria-label={t("Call.AcceptTODO")}
+          aria-label={t("Call.Buttons.Accept")}
         >
           <CallIcon />
         </IconButton>
         <IconButton
           onClick={() => onClose(false)}
           color="primary"
-          aria-label={t("Call.RefuseTODO")}
+          aria-label={t("Call.Buttons.Refuse")}
         >
           <CallEndIcon />
         </IconButton>

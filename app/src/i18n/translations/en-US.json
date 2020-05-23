@@ -27,6 +27,16 @@
     "Clear": "Clear conversation",
     "Delete": "Remove contact"
   },
+  "Call": {
+    "Alert": {
+      "Calling": "Calling %{username}",
+      "Called": "Call from %{username}"
+    },
+    "Buttons": {
+      "Accept": "Acceptă",
+      "Refuse": "Refuză"
+    }
+  },
   "Errors": {
     "Required": "Field is required",
     "Pozitive": "The number must pe pozitve",

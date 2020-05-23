@@ -21,7 +21,7 @@
     "Forgot": "Ai uitat parola?",
     "Errors": {
       "UsernameLength": "Numele de utilizator trebuie sa aiba intre 5 si 50 de caractere!",
-      "PasswordLength": "Parola trebuie sa aiba cel putin 5 caractere",
+      "PasswordLength": "Parola trebuie sa aibă cel putin 5 caractere",
       "MatchPassword": "Parola nu este aceeași!",
       "Email": "Valoarea introdusă nu este o adresă validă de email!"
     }
@@ -29,14 +29,24 @@
   "Contacts": {
     "ContactList": "Contacte",
     "Contacts": "Contacte",
-    "Search": "Cauta contact",
-    "Add": "Adauga contact"
+    "Search": "Caută contact",
+    "Add": "Adaugă contact"
   },
-  "Options" : {
+  "Options": {
     "Info": "Detalii contact",
-    "Clear": "Ștergeți conversația",
-    "Delete": "Ștergeți contact"
-},
+    "Clear": "Ștergeţi conversaţia",
+    "Delete": "Ștergeţi contact"
+  },
+  "Call": {
+    "Alert": {
+      "Calling": "Apelare %{username}",
+      "Called": "Apelat de %{username}"
+    },
+    "Buttons": {
+      "Accept": "Acceptă",
+      "Refuse": "Refuză"
+    }
+  },
   "Errors": {
     "Required": "Camp necesar",
     "Pozitive": "Numarul introdus trebuie sa fie pozitiv",
