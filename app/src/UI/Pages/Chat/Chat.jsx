@@ -131,7 +131,7 @@ function Chat() {
           .on(ADD_EVENTS.SENT, (request) => setSentRequests(prevValues => ([...prevValues, request])))
           .on(ADD_EVENTS.RECEIVED, (request) => setReceivedRequests(prevValues => ([...prevValues, request])))
           .on(ADD_EVENTS.ACCEPTED, (request) => {
-            const contact = new User(request.id, request.username);
+            const contact = new User(request.id, request.username, database);
             contact.isConnected = true;
 
             setContacts(prevContacts => ([
@@ -251,8 +251,13 @@ function Chat() {
 
   /* HANDLE CALLS */
 
+  /**
+   *
+   * @param {User} newContact
+   * @returns {Promise<void>}
+   */
   async function handleSelectContact(newContact) {
-    async function setMessagesStatus(contact) {
+    const setMessagesStatus = async contact => {
       try {
         const updatedContact = await updateContact(
           setContacts,
@@ -287,9 +292,13 @@ function Chat() {
         console.log(error);
         console.log(error.message);
       }
-    }
+    };
 
-    newContact.on("messages", () => setMessagesStatus(newContact));
+    newContact.on(User.EVENTS.MESSAGE, () => setMessagesStatus(newContact));
+    newContact.on(User.EVENTS.DELETE, () => {
+      setSelectedContact(null);
+      setContacts(prevContacts => prevContacts.filter(contact => contact.id !== newContact.id));
+    });
 
     if (newContact.chatItem.unread && (!selectedContact || (newContact.id !== selectedContact.id))) {
       await setMessagesStatus(newContact, "read");
@@ -297,7 +306,9 @@ function Chat() {
 
     setSelectedContact(prevContact => {
       if (prevContact) {
-        prevContact.removeAllListeners("messages");
+        prevContact.removeAllListeners(User.EVENTS.MESSAGE);
+        prevContact.removeAllListeners(User.EVENTS.CLEAR);
+        prevContact.removeAllListeners(User.EVENTS.DELETE);
       }
 
       return newContact;
@@ -367,7 +378,8 @@ function Chat() {
             />
 
             {
-              isCalled ? (
+              isCalled
+                ? (
                   <CallAlert
                     open={isCalled}
                     contact={call.contact}

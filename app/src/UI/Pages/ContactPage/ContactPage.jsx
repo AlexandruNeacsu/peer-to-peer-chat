@@ -5,6 +5,7 @@ import SendIcon from "@material-ui/icons/Send";
 import { MessageList } from "react-chat-elements";
 import DatabaseHandler from "../../../Database";
 import UploadFile from "./UploadFile";
+import User from "../../../Database/Schemas/User";
 
 import "react-chat-elements/dist/main.css";
 import "./ReactChatElementsCustomized.css";
@@ -150,7 +151,9 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
       ));
     };
 
-    selectedContact.on("message", handleMessages);
+    selectedContact.on(User.EVENTS.MESSAGE, handleMessages);
+
+    selectedContact.on(User.EVENTS.CLEAR, () => setMessageList([]));
 
     loadMessages(selectedContact.id)
       .then((messages) => {

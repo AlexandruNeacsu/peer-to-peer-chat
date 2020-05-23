@@ -22,6 +22,11 @@
     "Search": "Search contact",
     "Add": "Add contact"
   },
+  "Options" : {
+    "Info": "Contact info",
+    "Clear": "Clear conversation",
+    "Delete": "Remove contact"
+  },
   "Errors": {
     "Required": "Field is required",
     "Pozitive": "The number must pe pozitve",

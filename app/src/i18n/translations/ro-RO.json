@@ -32,6 +32,11 @@
     "Search": "Cauta contact",
     "Add": "Adauga contact"
   },
+  "Options" : {
+    "Info": "Detalii contact",
+    "Clear": "Ștergeți conversația",
+    "Delete": "Ștergeți contact"
+},
   "Errors": {
     "Required": "Camp necesar",
     "Pozitive": "Numarul introdus trebuie sa fie pozitiv",

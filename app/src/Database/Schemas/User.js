@@ -1,19 +1,29 @@
 import PeerId from "peer-id";
 import EventEmitter from "events";
+import Dexie from "dexie";
 
 class User extends EventEmitter {
+  static EVENTS = {
+    MESSAGE: "MESSAGE",
+    CLEAR: "CLEAR",
+    DELETE: "DELETE",
+  }
+
+
   /**
    * @param {String} id
    * @param {String }username
+   * @param {Dexie} database
    * @param {{date: null, unread: number, subtitle: string, title: string} | null} chatItem
    * @param peerIdJSON
    */
-  constructor(id, username, chatItem = null, peerIdJSON = null) {
+  constructor(id, username, database, chatItem = null, peerIdJSON = null) {
     super();
-
     // TODO add validations
     this.id = id;
     this.username = username;
+    this.database = database;
+
     this.avatar = null;
 
     this.peerId = PeerId.createFromB58String(id);
@@ -31,8 +41,28 @@ class User extends EventEmitter {
   }
 
   handleMessage(message) {
-    this.emit("message", message);
+    this.emit(User.EVENTS.MESSAGE, message);
   }
+
+  clearConversation = async () => {
+    // TODO move to constructor
+
+    await this.database.conversations.where({ partnerId: this.id }).delete();
+
+    this.emit(User.EVENTS.CLEAR); // TODO: use enum
+  };
+
+  delete = async () => {
+    // TODO move to constructor
+
+    await this.database.transaction("rw", this.database.users, this.database.conversations, async () => {
+      await this.database.conversations.where({ partnerId: this.id }).delete();
+
+      await this.database.users.where({ id: this.id }).delete();
+    });
+
+    this.emit(User.EVENTS.DELETE); // TODO: use enum
+  };
 
   /**
    * TODO

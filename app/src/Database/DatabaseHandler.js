@@ -89,7 +89,7 @@ const DatabaseHandler = {
 
     _database.users.hook(
       "reading",
-      ({ id, username, chatItem, peerIdJSON }) => new User(id, username, chatItem, peerIdJSON),
+      ({ id, username, chatItem, peerIdJSON }) => new User(id, username, _database, chatItem, peerIdJSON),
     );
   },
 

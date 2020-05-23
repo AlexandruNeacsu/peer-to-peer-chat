@@ -6,6 +6,7 @@ import IconButton from "@material-ui/core/IconButton";
 import GroupIcon from "@material-ui/icons/Group";
 import CallIcon from "@material-ui/icons/Call";
 import VideoCallIcon from "@material-ui/icons/VideoCall";
+import MoreVertIcon from "@material-ui/icons/MoreVert";
 import Badge from "@material-ui/core/Badge";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
@@ -13,6 +14,7 @@ import Typography from "@material-ui/core/Typography";
 import UserAvatar from "../../Components/UserAvatar";
 import ContactList from "./ContactList";
 import RequestsPopper from "./RequestsPopper";
+import ContactOptionsPopover from "./ContactOptionsPopover";
 
 const drawerWidth = 280;
 
@@ -68,7 +70,19 @@ function Sidebar({
   const classes = useStyles();
 
   const [anchorEl, setAnchorEl] = useState(null);
+  const [popOverOpen, setPopOverOpen] = useState("");
+
   // TODO: show a message or something if not connected to a peer
+
+  const handlePopoverOpen = (popOver) => (event) => {
+    setAnchorEl(event.currentTarget);
+    setPopOverOpen(popOver);
+  };
+
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+    setPopOverOpen("");
+  };
 
   return (
     <div id="sidebar" className={classes.contentRoot}>
@@ -104,6 +118,11 @@ function Sidebar({
                       )
                       : null
                   }
+                  <IconButton
+                    onClick={handlePopoverOpen("options")}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
                 </div>
               </div>
             )
@@ -126,7 +145,7 @@ function Sidebar({
           <UserAvatar username={username} isOnline={isOnline} showBadge showUsername />
           <IconButton
             aria-label="receivedRequests"
-            onClick={event => setAnchorEl(prevValue => (prevValue ? null : event.currentTarget))}
+            onClick={handlePopoverOpen("requests")}
           >
             <Badge badgeContent={receivedRequests.length + sentRequests.length} color="primary">
               <GroupIcon />
@@ -144,13 +163,23 @@ function Sidebar({
         />
 
         <RequestsPopper
+          open={popOverOpen === "requests"}
+          anchorEl={anchorEl}
+          onClose={handlePopoverClose}
           receivedRequests={receivedRequests}
           sentRequests={sentRequests}
-          anchorEl={anchorEl}
-          onClickAway={() => setAnchorEl(null)}
           handleAccept={handleAcceptRequest}
           handleReject={handleRejectRequest}
         />
+
+        <ContactOptionsPopover
+          open={popOverOpen === "options"}
+          anchorEl={anchorEl}
+          onClose={handlePopoverClose}
+          selectedContact={selectedContact}
+        />
+
+
       </Drawer>
 
       {children}
