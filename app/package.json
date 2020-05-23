@@ -37,6 +37,7 @@
     "react-dom": "^16.13.1",
     "react-draggable": "^4.4.2",
     "react-i18nify": "^3.1.6",
+    "react-resizable": "^1.10.1",
     "react-router-dom": "^5.1.2",
     "react-scripts": "3.4.0",
     "simple-peer": "^9.7.2",
