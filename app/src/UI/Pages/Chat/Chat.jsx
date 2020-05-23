@@ -316,12 +316,16 @@ function Chat() {
   }
 
   const handleCallResponse = (willAnswer) => {
-    if (willAnswer) {
-      setIsCalled(false);
-      setIsInCall(true);
+    setIsCalled(false);
 
-      ownNode.getImplementation(PROTOCOLS.CALL).accept();
+
+    if (willAnswer) {
+      setIsInCall(true);
+    } else {
+      setCall(null);
     }
+
+    ownNode.getImplementation(PROTOCOLS.CALL).accept(willAnswer);
   };
 
 

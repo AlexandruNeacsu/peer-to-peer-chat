@@ -52,7 +52,7 @@ export const CALL_EVENTS = {
   MUTE: "MUTE",
   VIDEO: "VIDEO",
   ACCEPTED: "ACCEPTED",
+  REFUSED: "REFUSED",
   CLOSE: "CLOSE",
   TRACK: "TRACK",
-
 };

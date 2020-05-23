@@ -86,7 +86,13 @@ export default class ChatProtocol extends BaseProtocol {
 
       case CALL_MESSAGES.ACCEPTED: {
         this.emit(CALL_EVENTS.ACCEPTED);
+        break;
+      }
 
+      case CALL_MESSAGES.REFUSED: {
+        // this.emit(CALL_EVENTS.REFUSED);
+
+        this.hangUp();
         break;
       }
 
@@ -122,12 +128,9 @@ export default class ChatProtocol extends BaseProtocol {
       peerStream => console.log("receive stream") || this.emit(CALL_EVENTS.CALLED, this._peerId.toB58String(), peerStream),
     );
 
-    this._peer.on("track", (track, peerStream) => this.emit(CALL_EVENTS.TRACK, track, peerStream))
+    this._peer.on("track", (track, peerStream) =>  console.log("receive track") || this.emit(CALL_EVENTS.TRACK, track, peerStream))
 
-    this._peer.on("close", () => {
-      this.hangUp();
-      this.emit(CALL_EVENTS.CLOSE);
-    });
+    this._peer.on("close", this.hangUp);
   }
 
   call = async (user, video = false) => {
@@ -175,7 +178,7 @@ export default class ChatProtocol extends BaseProtocol {
       this._peer.on("track", (track, peerStream) => this.emit(CALL_EVENTS.TRACK, track, peerStream))
 
 
-      this._peer.on("close", () => this.emit(CALL_EVENTS.CLOSE));
+      this._peer.on("close", this.hangUp);
 
       this._peer.on("error", (error) => {
         console.log(error);
@@ -190,18 +193,22 @@ export default class ChatProtocol extends BaseProtocol {
     }
   };
 
-  accept = async () => {
+  accept = async (willAnswer) => {
     const { stream: newStream } = await this.node.dialProtocol(this._peerId, PROTOCOLS.CALL);
-    await sendData(newStream.sink, [CALL_MESSAGES.ACCEPTED]);
+    await sendData(newStream.sink, [willAnswer ? CALL_MESSAGES.ACCEPTED : CALL_MESSAGES.REFUSED]);
   }
 
   hangUp = () => {
-    if (this._peer && this._stream) {
+    if (this._stream) {
       this._stream.getTracks().forEach(track => track.stop());
-      this._peerId = null;
+    }
 
+    if (this._peer) {
+      this._peerId = null;
       this._peer.destroy();
     }
+
+    this.emit(CALL_EVENTS.CLOSE);
   }
 
   changeMicrophone = () => {
