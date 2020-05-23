@@ -63,7 +63,7 @@ function Sidebar({
   sentRequests,
   handleAcceptRequest,
   handleRejectRequest,
-  call,
+  onCall,
   hasCamera,
   children,
 }) {
@@ -106,13 +106,13 @@ function Sidebar({
                 </div>
 
                 <div>
-                  <IconButton disabled={!selectedContact.isConnected} onClick={() => call(false)}>
+                  <IconButton disabled={!selectedContact.isConnected} onClick={() => onCall(false)}>
                     <CallIcon />
                   </IconButton>
                   {
                     hasCamera
                       ? (
-                        <IconButton disabled={!selectedContact.isConnected} onClick={() => call(true)}>
+                        <IconButton disabled={!selectedContact.isConnected} onClick={() => onCall(true)}>
                           <VideoCallIcon />
                         </IconButton>
                       )

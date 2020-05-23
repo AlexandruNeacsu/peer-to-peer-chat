@@ -64,15 +64,30 @@ function Chat() {
   const [isCalled, setIsCalled] = useState(false);
   const [hasCamera, setHasCamera] = useState(false);
 
+  /* LOAD DATABASE DATA */
   useEffect(() => {
-    async function checkForCamera() {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const hasCamera = devices.some(device => device.kind === "videoinput");
+    async function getDatabaseData() {
+      try {
+        const database = DatabaseHandler.getDatabase();
 
-      setHasCamera(hasCamera);
+        const userId = localStorage.getItem("id");
+        /** @type {Array<User>} */
+        const users = await database.users.where("id").notEqual(userId).toArray();
+
+        /** @type {Object[]} */
+        const requests = await database.requests.toArray();
+
+        setContacts(users);
+        setReceivedRequests(requests.filter(request => !request.sent));
+        setSentRequests(requests.filter(request => request.sent));
+      } catch (error) {
+        console.log(error);
+        console.log(error.message);
+        // TODO set error snackbar!, peer not found, node not created...
+      }
     }
 
-    checkForCamera();
+    getDatabaseData();
   }, []);
 
   /* INITIALIZE NODE */
@@ -170,11 +185,19 @@ function Chat() {
         node
           .getImplementation(PROTOCOLS.CALL)
           .on(CALL_EVENTS.CALLED, (callerId, peerStream) => {
+            console.log("Called")
+            console.log(contacts)
+            console.log(callerId)
+
             const contact = contacts.find(c => c.id === callerId);
+
+
+            console.log(contact)
 
             if (!contact) {
               // TODO
             } else {
+              console.log("CAlled contact")
               setCall({
                 contact,
                 peerStream,
@@ -193,11 +216,13 @@ function Chat() {
             });
           })
           .on(CALL_EVENTS.TRACK, (track, peerStream) => {
-            setCall(prevValue => ({
-              ...prevValue,
-              peerStream,
-              isReceivingVideo: peerStream.getVideoTracks().length,
-            }));
+            if (call) {
+              setCall(prevValue => ({
+                ...prevValue,
+                peerStream,
+                isReceivingVideo: peerStream.getVideoTracks().length,
+              }));
+            }
           })
           .on(CALL_EVENTS.ACCEPTED, () => console.log("ACC") || setIsInCall(true))
           .on(CALL_EVENTS.CLOSE, () => {
@@ -223,33 +248,17 @@ function Chat() {
     }
   }, [ownNode, contacts, selectedContact, call]);
 
-  /* LOAD DATABASE DATA */
+  /* CHECK MEDIA DEVICES */
   useEffect(() => {
-    async function getDatabaseData() {
-      try {
-        const database = DatabaseHandler.getDatabase();
+    async function checkForCamera() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasCamera = devices.some(device => device.kind === "videoinput");
 
-        const userId = localStorage.getItem("id");
-        /** @type {Array<User>} */
-        const users = await database.users.where("id").notEqual(userId).toArray();
-
-        /** @type {Object[]} */
-        const requests = await database.requests.toArray();
-
-        setContacts(users);
-        setReceivedRequests(requests.filter(request => !request.sent));
-        setSentRequests(requests.filter(request => request.sent));
-      } catch (error) {
-        console.log(error);
-        console.log(error.message);
-        // TODO set error snackbar!, peer not found, node not created...
-      }
+      setHasCamera(hasCamera);
     }
 
-    getDatabaseData();
+    checkForCamera();
   }, []);
-
-  /* HANDLE CALLS */
 
   /**
    *
@@ -328,6 +337,11 @@ function Chat() {
     ownNode.getImplementation(PROTOCOLS.CALL).accept(willAnswer);
   };
 
+  const handleCall = (withVideo) => {
+    ownNode.getImplementation(PROTOCOLS.CALL).call(selectedContact, withVideo);
+
+    setCall({ contact: selectedContact });
+  };
 
   return (
     <Loader isLoading={!ownNode}>
@@ -344,14 +358,15 @@ function Chat() {
             handleSelectContact={handleSelectContact}
             receivedRequests={receivedRequests}
             sentRequests={sentRequests}
-            call={(video) => ownNode.getImplementation(PROTOCOLS.CALL).call(selectedContact, video)}
+            onCall={handleCall}
             hasCamera={hasCamera}
           >
 
             {
-              isInCall && call ? (
+              call && !isCalled ? (
                 <VideoCall
                   bounds="body"
+                  loading={!isInCall}
                   stream={call.peerStream}
                   isReceivingVideo={call.isReceivingVideo}
                   isShowingVideo={call.isShowingVideo}

@@ -106,7 +106,7 @@ export default class ChatProtocol extends BaseProtocol {
 
     this._stream = await this._buildStream(false, true);
 
-    this._peer = new SimplePeer({ initiator: false, stream: this._stream });
+    this._peer = new SimplePeer({ initiator: false, stream: this._stream, trickle: true });
     this._peer.on("signal", async responseSignal => {
       const response = JSON.stringify(responseSignal);
       console.log([response]);
@@ -128,7 +128,7 @@ export default class ChatProtocol extends BaseProtocol {
       peerStream => console.log("receive stream") || this.emit(CALL_EVENTS.CALLED, this._peerId.toB58String(), peerStream),
     );
 
-    this._peer.on("track", (track, peerStream) =>  console.log("receive track") || this.emit(CALL_EVENTS.TRACK, track, peerStream))
+    this._peer.on("track", (track, peerStream) => console.log("receive track") || this.emit(CALL_EVENTS.TRACK, track, peerStream))
 
     this._peer.on("close", this.hangUp);
   }
@@ -151,7 +151,7 @@ export default class ChatProtocol extends BaseProtocol {
         return;
       }
 
-      this._peer = new SimplePeer({ initiator: true, stream: this._stream });
+      this._peer = new SimplePeer({ initiator: true, stream: this._stream, trickle: true });
 
       let initialSent = false;
       this._peer.on("signal", async data => {
@@ -212,17 +212,18 @@ export default class ChatProtocol extends BaseProtocol {
   }
 
   changeMicrophone = () => {
+    let isEnabled = false;
+
     if (this._peer && this._stream) {
-      let isEnabled = false;
       this._stream.getAudioTracks().forEach(track => {
         isEnabled = !track.enabled;
 
         // eslint-disable-next-line no-param-reassign
         track.enabled = !track.enabled;
       });
-
-      return isEnabled;
     }
+
+    return isEnabled;
   };
 
   changeVideo = async () => {
@@ -253,7 +254,7 @@ export default class ChatProtocol extends BaseProtocol {
       return true;
     }
 
-    return "unable";
+    return false;
   }
 
   /**

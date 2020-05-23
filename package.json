@@ -1,0 +1,25 @@
+{
+  "name": "first_demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "client": "cd app && npm start",
+    "signal": "cd signal_server_v2 && npm start",
+    "start": "concurrently \"npm run signal\" \"npm run client\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexandruNeacsu/first_demo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlexandruNeacsu/first_demo/issues"
+  },
+  "homepage": "https://github.com/AlexandruNeacsu/first_demo#readme",
+  "dependencies": {
+    "concurrently": "^5.2.0"
+  }
+}

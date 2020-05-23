@@ -12,9 +12,10 @@ import VideocamIcon from "@material-ui/icons/Videocam";
 import VideocamOffIcon from "@material-ui/icons/VideocamOff";
 import Fab from "@material-ui/core/Fab";
 import IconButton from "@material-ui/core/IconButton";
-import UserAvatar from "../../Components/UserAvatar";
 import red from "@material-ui/core/colors/red";
 import green from "@material-ui/core/colors/green";
+import UserAvatar from "../../Components/UserAvatar";
+import Loader from "../../Components/Loader";
 
 const useStyles = makeStyles(theme => ({
   small: {
@@ -53,7 +54,7 @@ const useStyles = makeStyles(theme => ({
     bottom: "50%",
     left: "50%",
     position: "absolute",
-    transform: "translate(-50 %, -50 %)",
+    transform: "translate(-50%, 50%)",
   },
   video: {
     maxWidth: "100%",
@@ -66,10 +67,13 @@ const useStyles = makeStyles(theme => ({
   green: {
     backgroundColor: green[500],
   },
+  box: {
+    flexGrow: 1,
+  },
 }));
 
 
-const VideoCall = ({ stream, contact, isReceivingVideo, isShowingVideo, hasCamera, bounds, onEnd, onVideoChange, onMicrophoneChange }) => {
+const VideoCall = ({ stream, contact, loading: isLoading, isReceivingVideo, isShowingVideo, hasCamera, bounds, onEnd, onVideoChange, onMicrophoneChange }) => {
   const classes = useStyles();
 
   const [expanded, setExpanded] = useState(false);
@@ -79,9 +83,11 @@ const VideoCall = ({ stream, contact, isReceivingVideo, isShowingVideo, hasCamer
   const ref = useRef();
 
   useEffect(() => {
-    ref.current.srcObject = stream;
-    ref.current.play();
-  }, [isReceivingVideo, stream]);
+    if (!isLoading) {
+      ref.current.srcObject = stream;
+      ref.current.play();
+    }
+  }, [isLoading, isReceivingVideo, stream]);
 
 
   const handleMicrophoneChange = useCallback(async () => {
@@ -94,7 +100,7 @@ const VideoCall = ({ stream, contact, isReceivingVideo, isShowingVideo, hasCamer
       console.log(error);
       console.log(error.message())
     }
-  }, [hasCamera, onMicrophoneChange]);
+  }, [onMicrophoneChange]);
 
   const handleVideoChange = useCallback(async () => {
     try {
@@ -106,7 +112,7 @@ const VideoCall = ({ stream, contact, isReceivingVideo, isShowingVideo, hasCamer
       console.log(error);
       console.log(error.message);
     }
-  }, [showVideo, onVideoChange]);
+  }, [onVideoChange]);
 
   return (
     <Draggable bounds={bounds} position={expanded ? { x: 0, y: 0 } : undefined} disabled={expanded}>
@@ -120,26 +126,46 @@ const VideoCall = ({ stream, contact, isReceivingVideo, isShowingVideo, hasCamer
             showUsername
           />
 
+          <div className={expanded && !isReceivingVideo ? classes.box : undefined} />
+
           <IconButton onClick={() => setExpanded(prevState => !prevState)}>
             {expanded ? <TabUnselectedIcon /> : <AspectRatioIcon />}
           </IconButton>
         </div>
 
-        {
-          isReceivingVideo ? (
-            <video autoPlay className={classes.video} ref={ref} />
-          ) : (
-            <audio ref={ref} autoPlay />
-          )
-        }
+        <Loader isLoading={isLoading}>
+          {
+            isReceivingVideo ? (
+              <video autoPlay className={classes.video} ref={ref} />
+            ) : (
+              <audio ref={ref} autoPlay />
+            )
+          }
+        </Loader>
+
 
         {/* TODO add aria-label to fabs */}
         <div className={classes.controls}>
+          {
+            hasCamera
+              ? (
+                <Fab
+                  className={showVideo ? classes.green : classes.red}
+                  onClick={handleVideoChange}
+                  disabled={isLoading}
+                >
+                  {showVideo ? <VideocamIcon /> : <VideocamOffIcon />}
+                </Fab>
+              )
+              : null
+          }
+
           <Fab
             className={clsx({ [classes.controlLeftMargin]: true, [classes.red]: !hasSound, [classes.green]: hasSound })}
             color="secondary"
             aria-label="add"
             onClick={handleMicrophoneChange}
+            disabled={isLoading}
           >
             {hasSound ? <MicIcon /> : <MicOffIcon />}
           </Fab>
@@ -147,16 +173,6 @@ const VideoCall = ({ stream, contact, isReceivingVideo, isShowingVideo, hasCamer
           <Fab className={clsx(classes.controlLeftMargin, classes.red)} onClick={onEnd}>
             <CallEndIcon />
           </Fab>
-
-          {
-            hasCamera
-              ? (
-                <Fab className={showVideo ? classes.green : classes.red} onClick={handleVideoChange}>
-                  {showVideo ? <VideocamIcon /> : <VideocamOffIcon />}
-                </Fab>
-              )
-              : null
-          }
         </div>
 
       </Paper>
