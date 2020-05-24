@@ -92,6 +92,15 @@ function formatMessage(message) {
         ...common,
         type: "text",
         text: message.text,
+        reply: message.replyMessage ? {
+          title: message.replyMessage.originalData.senderId === localStorage.getItem("id")
+            ? localStorage.getItem("username")
+            : message.partnerUsername,
+          titleColor: message.replyMessage.originalData.senderId === localStorage.getItem("id")
+            ? "#388E3C"
+            : "#1976D2",
+          message: message.replyMessage.text,
+        } : undefined,
       };
     case "FILE":
       return {
@@ -308,13 +317,14 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
         setDragElement(null);
         messagesEndRef.current.scrollIntoView();
       } else if (message) {
-        const sentText = await sendText(selectedContact, message);
+        const sentText = await sendText(selectedContact, message, replyMessage);
 
         sentMessages.push(sentText);
       }
 
       if (sentMessages.length) {
         setMessage("");
+        setReplyMessage(null);
         setMessageList(prevMessages => [
           ...prevMessages,
           ...sentMessages.map(sentMessage => formatMessage(sentMessage)),
@@ -335,6 +345,28 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
       await handleSubmit();
     }
   }, [handleSubmit]);
+
+  const handleReplyMessageClick = (item) => setMessageList(prevState => prevState.map(e => {
+    if (e.originalData.id === item.originalData.replyMessage.originalData.id) {
+      return {
+        ...e,
+        focus: true,
+      };
+    }
+
+    return e;
+  }));
+
+  const handleMessageFocused = (item) => setTimeout(() => setMessageList(prevState => prevState.map(e => {
+    if (e.originalData.id === item.originalData.id) {
+      return {
+        ...e,
+        focus: false,
+      };
+    }
+
+    return e;
+  })), 1500);
 
   return (
     <div
@@ -363,7 +395,8 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
               onTitleClick={() => console.log("onTitleClick")}
               onForwardClick={() => console.log("onForwardClick")}
               onReplyClick={setReplyMessage}
-              onReplyMessageClick={() => console.log("onReplyMessageClick")}
+              onReplyMessageClick={handleReplyMessageClick}
+              onMessageFocused={handleMessageFocused}
               onDownload={(file) => console.log(file)}
               onOpen={(file) => console.log(file)}
             />

@@ -25,3 +25,11 @@
 .rce-mbox .rce-mbox-time {
     color: inherit;
 }
+
+div.rce-mbox-reply {
+    background: #4b4e55;
+}
+
+div.rce-mbox-reply-message {
+    color: #ffff;
+}

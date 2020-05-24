@@ -49,6 +49,7 @@ export default class ChatProtocol extends BaseProtocol {
                 type: initialMessage.type,
                 sentDate: initialMessage.sentDate,
                 text: initialMessage.text,
+                replyMessage: initialMessage.replyMessage,
                 receivedDate: chatItem.date,
                 partnerId: user.id,
                 partnerUsername: user.username, // TODO: this will show old username in chat history
@@ -141,7 +142,7 @@ export default class ChatProtocol extends BaseProtocol {
     }
   };
 
-  sendText = async (user, text) => {
+  sendText = async (user, text, replyMessage) => {
     if (!(user && text)) {
       throw new Error(); // TODO
     }
@@ -151,6 +152,7 @@ export default class ChatProtocol extends BaseProtocol {
         type: CHAT_MESSAGE_TYPE.TEXT,
         sentDate: new Date(), // TODO: repalce with new Date() ?
         text,
+        replyMessage,
       };
 
       const peerId = PeerId.createFromB58String(user.id);
@@ -165,6 +167,7 @@ export default class ChatProtocol extends BaseProtocol {
         partnerUsername: user.username, // TODO: will show old username in chat history
         senderId: localStorage.getItem("id"),
         status: CHAT_MESSAGE_STATUS.SENT,
+        replyMessage,
       };
 
       const chatItem = {
