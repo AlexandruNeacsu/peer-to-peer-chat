@@ -46,6 +46,11 @@ function updateContact(setContacts, contactId, fields) {
   });
 }
 
+const ring = new Audio("sounds/ring.mp3");
+ring.loop = true;
+
+const notification = new Audio("sounds/notification.wav");
+
 function Chat() {
   // TODO clean this mess
   const [username, setUsername] = useState(localStorage.getItem("username"));
@@ -178,13 +183,17 @@ function Chat() {
 
             if (contact) {
               contact.handleMessage(structuredMessage);
+
+              if (contact.chatItem.unread === 1 || contact.chatItem.unread % 5 === 0) {
+                await notification.play();
+              }
             }
           });
 
 
         node
           .getImplementation(PROTOCOLS.CALL)
-          .on(CALL_EVENTS.CALLED, (callerId, peerStream) => {
+          .on(CALL_EVENTS.CALLED, async (callerId, peerStream) => {
             console.log("Called")
             console.log(contacts)
             console.log(callerId)
@@ -198,6 +207,9 @@ function Chat() {
               // TODO
             } else {
               console.log("CAlled contact")
+
+              await ring.play();
+
               setCall({
                 contact,
                 peerStream,
@@ -206,7 +218,10 @@ function Chat() {
               setIsCalled(true);
             }
           })
-          .on(CALL_EVENTS.CALL, (contact, ownStream, peerStream) => {
+          .on(CALL_EVENTS.CALL, async (contact, ownStream, peerStream) => {
+            await ring.play();
+
+
             setCall({
               contact,
               ownStream,
@@ -227,6 +242,8 @@ function Chat() {
           .on(CALL_EVENTS.ACCEPTED, () => console.log("ACC") || setIsInCall(true))
           .on(CALL_EVENTS.CLOSE, () => {
             console.log("CLOSE")
+
+            ring.pause();
 
             setIsInCall(false);
             setIsCalled(false);

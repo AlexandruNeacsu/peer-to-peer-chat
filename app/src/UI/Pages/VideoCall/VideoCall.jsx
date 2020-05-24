@@ -111,7 +111,7 @@ const VideoCall = ({ stream, contact, loading: isLoading, isReceivingVideo, isSh
     } catch (error) {
       // TODO
       console.log(error);
-      console.log(error.message())
+      console.log(error.message);
     }
   }, [onMicrophoneChange]);
 
