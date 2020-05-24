@@ -317,7 +317,16 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
         setDragElement(null);
         messagesEndRef.current.scrollIntoView();
       } else if (message) {
-        const sentText = await sendText(selectedContact, message, replyMessage);
+        const formattedReplyMessage = { ...replyMessage };
+
+        if (formattedReplyMessage.originalData.file) {
+          formattedReplyMessage.text = formattedReplyMessage.originalData.file.name;
+
+          delete formattedReplyMessage.data;
+          delete formattedReplyMessage.originalData.file;
+        }
+
+        const sentText = await sendText(selectedContact, message, formattedReplyMessage);
 
         sentMessages.push(sentText);
       }
