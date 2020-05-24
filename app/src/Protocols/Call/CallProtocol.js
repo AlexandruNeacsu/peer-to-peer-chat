@@ -35,13 +35,14 @@ export default class ChatProtocol extends BaseProtocol {
         return;
       }
 
-      if (!(await this._checkIsContact(stream, connection))) {
+      const user = await this._checkIsContact(stream, connection);
+      if (!user) {
         return;
       }
 
       this._peerId = connection.remotePeer;
 
-      await this._handleNewCall(stream);
+      await this._handleNewCall(stream, user);
     } catch (error) {
       // TODO
       console.log(error);
@@ -59,10 +60,10 @@ export default class ChatProtocol extends BaseProtocol {
       // TODO: is ok?
       await this.node.hangUp(connection.remotePeer);
 
-      return false;
+      return null;
     }
 
-    return true;
+    return user;
   }
 
   _handleExistingCall = async (stream) => {
@@ -101,7 +102,7 @@ export default class ChatProtocol extends BaseProtocol {
     }
   }
 
-  _handleNewCall = async (stream) => {
+  _handleNewCall = async (stream, user) => {
     await sendData(stream.sink, [CALL_MESSAGES.OK]);
 
     this._stream = await this._buildStream(false, true);
@@ -125,7 +126,7 @@ export default class ChatProtocol extends BaseProtocol {
 
     this._peer.on(
       "stream",
-      peerStream => console.log("receive stream") || this.emit(CALL_EVENTS.CALLED, this._peerId.toB58String(), peerStream),
+      peerStream => console.log("receive stream") || this.emit(CALL_EVENTS.CALLED, user, peerStream),
     );
 
     this._peer.on("track", (track, peerStream) => console.log("receive track") || this.emit(CALL_EVENTS.TRACK, track, peerStream))

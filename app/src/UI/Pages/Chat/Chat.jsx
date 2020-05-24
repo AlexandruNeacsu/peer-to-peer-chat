@@ -193,30 +193,19 @@ function Chat() {
 
         node
           .getImplementation(PROTOCOLS.CALL)
-          .on(CALL_EVENTS.CALLED, async (callerId, peerStream) => {
+          .on(CALL_EVENTS.CALLED, async (caller, peerStream) => {
             console.log("Called")
             console.log(contacts)
-            console.log(callerId)
+            console.log(caller)
 
-            const contact = contacts.find(c => c.id === callerId);
+            await ring.play();
 
-
-            console.log(contact)
-
-            if (!contact) {
-              // TODO
-            } else {
-              console.log("CAlled contact")
-
-              await ring.play();
-
-              setCall({
-                contact,
-                peerStream,
-                isReceivingVideo: peerStream.getVideoTracks().length,
-              });
-              setIsCalled(true);
-            }
+            setCall({
+              contact: caller,
+              peerStream,
+              isReceivingVideo: peerStream.getVideoTracks().length,
+            });
+            setIsCalled(true);
           })
           .on(CALL_EVENTS.CALL, async (contact, ownStream, peerStream) => {
             await ring.play();
