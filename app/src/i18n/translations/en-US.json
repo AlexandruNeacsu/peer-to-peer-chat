@@ -20,7 +20,8 @@
   "Contacts": {
     "ContactList": "Contacts",
     "Search": "Search contact",
-    "Add": "Add contact"
+    "Add": "Add contact",
+    "Write": "Write a message..."
   },
   "Options" : {
     "Info": "Contact info",

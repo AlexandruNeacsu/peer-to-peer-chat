@@ -99,12 +99,10 @@ export default function ContactList({ contacts, selectedContact, setSelectedCont
         <Typography variant="h3" color="textPrimary">
           {t("Contacts.ContactList")}
         </Typography>
-        <IconButton className={classes.contactAddButton} onClick={onAdd}>
+        <IconButton color="primary" className={classes.contactAddButton} onClick={onAdd}>
           <PersonAddIcon />
         </IconButton>
       </div>
-
-      {/* TODO incarca optiuni dupa ce user a scris cateva litere...  */}
 
       <div className={classes.searchContainer}>
         <div className={classes.search}>

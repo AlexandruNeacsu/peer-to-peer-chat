@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { t } from "react-i18nify";
+import clsx from "clsx";
 import { makeStyles } from "@material-ui/core/styles";
-import { TextField, IconButton } from "@material-ui/core";
+import { IconButton, TextField } from "@material-ui/core";
 import SendIcon from "@material-ui/icons/Send";
+import ClearIcon from "@material-ui/icons/Clear";
 import { MessageList } from "react-chat-elements";
 import DatabaseHandler from "../../../Database";
 import UploadFile from "./UploadFile";
@@ -25,12 +28,46 @@ const useStyles = makeStyles(theme => ({
     flexDirection: "column",
     padding: theme.spacing(1),
   },
-  input: {
+  inputContainer: {
+    position: "sticky",
+    bottom: 0,
     display: "flex",
+    flexWrap: "wrap",
     alignItems: "center",
     padding: theme.spacing(1, 2),
     backgroundColor: theme.palette.background.paper,
     borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+  },
+  input: {
+    flexGrow: 1,
+  },
+  replyContainer: {
+    flexBasis: "100%",
+    display: "flex",
+    marginBottom: theme.spacing(2),
+  },
+  replyContent: {
+    display: "flex",
+    flexGrow: 1,
+  },
+  leftBorder: {
+    width: theme.spacing(1),
+    borderTopLeftRadius: theme.spacing(1),
+    borderBottomLeftRadius: theme.spacing(1),
+  },
+  leftBorderSelf: {
+    backgroundColor: theme.palette.primary.main,
+  },
+  leftBorderContact: {
+    backgroundColor: theme.palette.secondary.main,
+  },
+  replyText: {
+    padding: theme.spacing(2),
+    borderTopRightRadius: theme.spacing(1),
+    borderBottomRightRadius: theme.spacing(1),
+    backgroundColor: "#4b4e55",
+    color: theme.palette.white,
+    flexGrow: 1,
   },
 }));
 
@@ -46,8 +83,6 @@ function formatMessage(message) {
     theme: "white",
     notch: false,
     // TODO: dont use localstorage
-    // title: didWeSend ? localStorage.getItem("username") : message.partnerUsername,
-    // titleColor: this.getRandomColor(), // TODO add to user
     date: didWeSend ? message.sentDate : message.receivedDate,
   };
 
@@ -123,9 +158,13 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
   const [page, setPage] = useState(1);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
   const [message, setMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
   const [files, setFiles] = useState([]);
+
+  const [replyMessage, setReplyMessage] = useState();
+
   const [dragElement, setDragElement] = useState(null);
 
   const messagesEndRef = useRef();
@@ -297,7 +336,6 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
     }
   }, [handleSubmit]);
 
-
   return (
     <div
       id="contact-page"
@@ -324,7 +362,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
               dataSource={messageList}
               onTitleClick={() => console.log("onTitleClick")}
               onForwardClick={() => console.log("onForwardClick")}
-              onReplyClick={() => console.log("onReplyClick")}
+              onReplyClick={setReplyMessage}
               onReplyMessageClick={() => console.log("onReplyMessageClick")}
               onDownload={(file) => console.log(file)}
               onOpen={(file) => console.log(file)}
@@ -336,23 +374,51 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
       {/* Used to scroll to bottom */}
       <div ref={messagesEndRef} />
 
-      {/* COMPOSE MESSAGE */}
-      <footer className={classes.input}>
-        <TextField
-          id="standard-multiline-flexible"
-          label="Multiline"
-          variant="outlined"
-          fullWidth
-          multiline
-          rowsMax="4"
-          value={message}
-          disabled={!selectedContact.isConnected}
-          onKeyDown={handleKeyDown}
-          onChange={(event) => setMessage(event.target.value)}
-        />
+      <footer className={classes.inputContainer}>
+        {
+          replyMessage && (
+            <div className={classes.replyContainer}>
+              <div className={classes.replyContent}>
+                <span className={clsx(
+                  classes.leftBorder,
+                  replyMessage.position === "right" ? classes.leftBorderSelf : classes.leftBorderContact,
+                )}
+                />
+
+                <div className={classes.replyText}>
+                  {replyMessage.text}
+                </div>
+              </div>
+
+              <IconButton
+                aria-label="clear"
+                color="primary"
+                onClick={() => setReplyMessage(null)}
+              >
+                <ClearIcon />
+              </IconButton>
+            </div>
+          )
+        }
+        <div className={classes.input}>
+          <TextField
+            input={classes.input}
+            placeholder={t("Contacts.Write")}
+            variant="outlined"
+            fullWidth
+            multiline
+            rowsMax="4"
+            value={message}
+            disabled={!selectedContact.isConnected}
+            onKeyDown={handleKeyDown}
+            onChange={(event) => setMessage(event.target.value)}
+          />
+        </div>
+
         <IconButton
-          aria-label="send"
-          disabled={!selectedContact.isConnected}
+          aria-label={t("Contacts.Send")}
+          color={selectedContact.isConnected && message ? "primary" : undefined}
+          disabled={!selectedContact.isConnected || !message}
           onClick={handleSubmit}
         >
           <SendIcon />

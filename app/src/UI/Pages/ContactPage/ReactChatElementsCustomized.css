@@ -4,12 +4,14 @@
 
 .rce-container-mbox > .rce-mbox {
     /*background: #282c34;*/
-    background-color: rgb(40, 44, 52);
-    box-shadow: rgba(0, 0, 0, 0.7) 0 0 1px 0, rgba(0, 0, 0, 0.5) 0 3px 4px -2px;
+    background: #03A9F4;
+    /*box-shadow: rgba(0, 0, 0, 0.7) 0 0 1px 0, rgba(0, 0, 0, 0.5) 0 3px 4px -2px;*/
+    color: #212121;
 }
 
 .rce-container-mbox > .rce-mbox.rce-mbox-right {
-    background: #7169FF;
+    background: #8BC34A;
+    color: #212121;
 }
 
 .rce-mbox-body .rce-mbox-title {
@@ -17,9 +19,9 @@
 }
 
 .rce-mbox-text {
-    color: #FFFF;
+    color: inherit;
 }
 
 .rce-mbox .rce-mbox-time {
-    color: #FFFF;
+    color: inherit;
 }

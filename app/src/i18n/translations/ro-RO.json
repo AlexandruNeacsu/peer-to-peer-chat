@@ -30,7 +30,9 @@
     "ContactList": "Contacte",
     "Contacts": "Contacte",
     "Search": "Caută contact",
-    "Add": "Adaugă contact"
+    "Add": "Adaugă contact",
+    "Send": "Trimite",
+    "Write": "Scrie un mesaj..."
   },
   "Options": {
     "Info": "Detalii contact",

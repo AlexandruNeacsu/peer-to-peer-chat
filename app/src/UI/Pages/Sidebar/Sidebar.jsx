@@ -106,13 +106,13 @@ function Sidebar({
                 </div>
 
                 <div>
-                  <IconButton disabled={!selectedContact.isConnected} onClick={() => onCall(false)}>
+                  <IconButton color="primary" disabled={!selectedContact.isConnected} onClick={() => onCall(false)}>
                     <CallIcon />
                   </IconButton>
                   {
                     hasCamera
                       ? (
-                        <IconButton disabled={!selectedContact.isConnected} onClick={() => onCall(true)}>
+                        <IconButton color="primary" disabled={!selectedContact.isConnected} onClick={() => onCall(true)}>
                           <VideoCallIcon />
                         </IconButton>
                       )
