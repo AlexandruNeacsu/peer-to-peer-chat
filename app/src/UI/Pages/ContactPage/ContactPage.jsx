@@ -34,7 +34,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const PAGE_SIZE = 20; // 20 messages
+const PAGE_SIZE = 50; // 50 messages
 
 function formatMessage(message) {
   const didWeSend = localStorage.getItem("id") === message.senderId;
@@ -98,27 +98,15 @@ function formatMessage(message) {
 }
 
 
-async function loadMessages(partnerId, lastEntry) {
+async function loadMessages(partnerId, limit) {
   const database = DatabaseHandler.getDatabase();
-  let messages;
+  const messages = await database.conversations
+    .orderBy("id")
+    .reverse()
+    .filter(conversation => conversation.partnerId === partnerId)
+    .limit(limit)
+    .toArray();
 
-  if (!lastEntry) {
-    // get the latest messages and put them in numerical order
-    messages = await database.conversations
-      .orderBy("id")
-      .reverse()
-      .filter(conversation => conversation.partnerId === partnerId)
-      .limit(PAGE_SIZE)
-      .toArray();
-  } else {
-    messages = await database.conversations
-      .where("id")
-      .below(lastEntry.originalData.id)
-      .filter(conversation => conversation.partnerId === partnerId)
-      .reverse()
-      .limit(PAGE_SIZE)
-      .toArray();
-  }
 
   return messages.reverse().map(msg => formatMessage(msg));
 }
@@ -133,12 +121,14 @@ async function loadMessages(partnerId, lastEntry) {
 export default function ContactPage({ selectedContact, sendText, sendFile }) {
   const classes = useStyles();
 
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [message, setMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
   const [files, setFiles] = useState([]);
   const [dragElement, setDragElement] = useState(null);
-  const messagesEndRef = useRef(null);
+
+  const messagesEndRef = useRef();
 
   /* LOAD MESSAGES AND LISTEN FOR NEW ONES */
   useEffect(() => {
@@ -155,7 +145,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
     selectedContact.on(User.EVENTS.CLEAR, () => setMessageList([]));
 
-    loadMessages(selectedContact.id)
+    loadMessages(selectedContact.id, PAGE_SIZE)
       .then((messages) => {
         setMessageList(messages);
         setPage(prevPage => prevPage + 1);
@@ -186,14 +176,22 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
   /* HANDLE PAGE SCROLL */
   useEffect(() => {
     window.onscroll = async () => {
-      if (window.pageYOffset === 0 && messageList.length && (messageList.length >= page * PAGE_SIZE)) {
+      const initialHeight = document.body.clientHeight;
+      const initialPos = window.pageYOffset;
+      const percentScrolled = Math.round((window.pageYOffset / initialHeight) * 100);
+
+      if (!isLoadingMessages && percentScrolled <= 20 && messageList.length && (messageList.length >= (page - 1) * PAGE_SIZE)) {
         try {
-          const lastEntry = messageList[0];
+          setIsLoadingMessages(true);
 
-          const messages = await loadMessages(selectedContact.id, lastEntry);
+          const messages = await loadMessages(selectedContact.id, page * PAGE_SIZE);
 
-          setMessageList(prevMessages => ([...messages, ...prevMessages]));
+          setMessageList(messages);
           setPage(prevPage => prevPage + 1);
+          setIsLoadingMessages(false);
+
+          // keep the same position
+          window.scrollTo(0, initialPos + (document.body.clientHeight - initialHeight));
         } catch (error) {
           // TODO
           console.log(error);
@@ -201,7 +199,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
         }
       }
     };
-  }, [page, messageList, selectedContact]);
+  }, [page, messageList, selectedContact.id, isLoadingMessages]);
 
   /* HANDLERS */
   const handleDragOver = useCallback((event) => {
@@ -270,17 +268,21 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
         setDragElement(null);
         messagesEndRef.current.scrollIntoView();
-      } else {
+      } else if (message) {
         const sentText = await sendText(selectedContact, message);
 
         sentMessages.push(sentText);
       }
 
-      setMessage("");
-      setMessageList(prevMessages => [
-        ...prevMessages,
-        ...sentMessages.map(sentMessage => formatMessage(sentMessage)),
-      ]);
+      if (sentMessages.length) {
+        setMessage("");
+        setMessageList(prevMessages => [
+          ...prevMessages,
+          ...sentMessages.map(sentMessage => formatMessage(sentMessage)),
+        ]);
+
+        messagesEndRef.current.scrollIntoView();
+      }
     } catch (error) {
       // TODO
       console.log(error);
