@@ -7,14 +7,15 @@ import GroupIcon from "@material-ui/icons/Group";
 import CallIcon from "@material-ui/icons/Call";
 import VideoCallIcon from "@material-ui/icons/VideoCall";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
+import SettingsIcon from "@material-ui/icons/Settings";
 import Badge from "@material-ui/core/Badge";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
-import Typography from "@material-ui/core/Typography";
 import UserAvatar from "../../Components/UserAvatar";
 import ContactList from "./ContactList";
 import RequestsPopper from "./RequestsPopper";
 import ContactOptionsPopover from "./ContactOptionsPopover";
+import SettingsPopover from "./SettingsPopover";
 
 const drawerWidth = 280;
 
@@ -47,7 +48,9 @@ const useStyles = makeStyles(theme => ({
   userItems: {
     ...theme.mixins.toolbar,
     display: "flex",
-    justifyContent: "space-between",
+  },
+  userAvatar: {
+    flexGrow: 1,
   },
 }));
 
@@ -89,11 +92,7 @@ function Sidebar({
       <AppBar position="fixed" className={classes.appBar}>
         <Toolbar>
           {
-            !selectedContact ? (
-              <Typography variant="h6" noWrap>
-                Permanent drawer
-              </Typography>
-            ) : (
+            selectedContact && (
               <div className={classes.toolbarItems}>
                 <div className={classes.toolbarItemsLeft}>
                   <UserAvatar
@@ -142,7 +141,7 @@ function Sidebar({
       >
 
         <div className={classes.userItems}>
-          <UserAvatar username={username} isOnline={isOnline} showBadge showUsername />
+          <UserAvatar className={classes.userAvatar} username={username} isOnline={isOnline} showBadge showUsername />
           <IconButton
             aria-label="receivedRequests"
             onClick={handlePopoverOpen("requests")}
@@ -150,6 +149,12 @@ function Sidebar({
             <Badge badgeContent={receivedRequests.length + sentRequests.length} color="primary">
               <GroupIcon />
             </Badge>
+          </IconButton>
+          <IconButton
+            aria-label="settings"
+            onClick={handlePopoverOpen("settings")}
+          >
+            <SettingsIcon />
           </IconButton>
         </div>
 
@@ -177,6 +182,12 @@ function Sidebar({
           anchorEl={anchorEl}
           onClose={handlePopoverClose}
           selectedContact={selectedContact}
+        />
+
+        <SettingsPopover
+          open={popOverOpen === "settings"}
+          anchorEl={anchorEl}
+          onClose={handlePopoverClose}
         />
 
 

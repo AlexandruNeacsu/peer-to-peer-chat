@@ -1,5 +1,9 @@
 {
-  "Languages": {},
+  "Languages": {
+    "Label": "Language",
+    "Romanian": "Română",
+    "English": "English"
+  },
   "Navigation": {},
   "Auth": {
     "Authentication": "Authentication",

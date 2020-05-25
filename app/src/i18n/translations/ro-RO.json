@@ -1,7 +1,8 @@
 {
   "Languages": {
-    "Romanian": "Romana",
-    "English": "Engleza"
+    "Label": "Limbă",
+    "Romanian": "Română",
+    "English": "English"
   },
   "Navigation": {
     "Dashboard": "Dashboard",

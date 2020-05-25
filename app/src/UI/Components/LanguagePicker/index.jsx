@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
-import clsx from "clsx";
-import Select, { components } from "react-select";
-import { t, setLocale, getLocale } from "react-i18nify";
+import React, { useState } from "react";
+import { t, setLocale } from "react-i18nify";
 import moment from "moment";
 import { makeStyles } from "@material-ui/core/styles";
 import { Avatar, Typography } from "@material-ui/core";
-import { getLanguageOptions } from "../../utils/i18n/initalize-i18n";
+import Autocomplete from "@material-ui/lab/Autocomplete";
+import TextField from "@material-ui/core/TextField";
+import { getLanguageOptions } from "../../../i18n/initialize-i18n";
 
 
 const useStyles = makeStyles(() => ({
   select: {
-    width: "10em",
+    flexGrow: 1,
   },
   avatar: {
     width: "32px",
@@ -24,93 +24,52 @@ const useStyles = makeStyles(() => ({
 const LanguageItem = ({ label, avatar, classes }) => (
   <>
     <Avatar name={label} src={`${window.location.origin.toString()}/${avatar}`} className={classes.avatar} />
-    <Typography color="secondary" className={classes.typography}>{t(label)}</Typography>
+    <Typography className={classes.typography}>{t(label)}</Typography>
   </>
 );
 
-const Option = (props) => {
-  const { data = {} } = props;
-  const { label, avatar } = data;
-
-  const classes = useStyles();
-
-  return (
-    <components.Option {...props}>
-      <LanguageItem label={label} avatar={avatar} classes={classes} />
-    </components.Option>
-  );
-};
-
-const SingleValue = (props) => {
-  const { data = {} } = props;
-  const { label, avatar } = data;
-
-  const classes = useStyles();
-
-  return (
-    <components.SingleValue {...props}>
-      <LanguageItem label={label} avatar={avatar} classes={classes} />
-    </components.SingleValue>
-  );
-};
+const LanguageInput = ({ inputProps, language, ...other }) => (
+  <TextField
+    {...other}
+    label={t("Languages.Label")}
+    variant="outlined"
+    inputProps={{
+      ...inputProps,
+      autoComplete: "new-password", // disable autocomplete and autofill
+    }}
+  />
+);
 
 // options are hardcoded
 const options = getLanguageOptions();
 
-export default function LanguagePicker({ className }) {
+export default function LanguagePicker() {
   const classes = useStyles();
-  const [selectedLanguage, setSelectedLanguage] = useState();
+  const [selectedLanguage, setSelectedLanguage] = useState(JSON.parse(localStorage.getItem("language")));
 
-  useEffect(() => {
-    const initialLocale = getLocale();
+  const handleChange = (event, language) => {
+    if (language) {
+      const { locale } = language;
 
-    setSelectedLanguage(options.find(e => e.locale === initialLocale));
-  }, []);
+      setLocale(locale);
+      moment.locale(locale);
 
-  const handleChange = (language) => {
-    // TODO: sync to DB
-    const { locale } = language;
-
-    setLocale(locale);
-    setSelectedLanguage(language);
-    moment.locale(locale);
+      setSelectedLanguage(language);
+      localStorage.setItem("language", JSON.stringify(language));
+    }
   };
 
-  // also take the user suplied classes and add it to ours
+  // also take the user supplied classes and add it to ours
   return (
-    <Select
-      options={options}
+    <Autocomplete
       value={selectedLanguage}
-      className={clsx(classes.select, className)}
+      options={options}
+      autoHighlight
+      fullWidth
       onChange={handleChange}
-      components={{
-        Option,
-        SingleValue,
-        DropdownIndicator: () => null,
-      }}
-      styles={{
-        singleValue: providedStyles => ({
-          ...providedStyles,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }),
-        option: (providedStyles, { isFocused }) => ({
-          ...providedStyles,
-          backgroundColor: isFocused ? "#ebebeb" : undefined,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }),
-        input: providedStyles => ({
-          ...providedStyles,
-          color: "transparent",
-          textShadow: "0 0 0 #2196f3",
-          "&:focus": {
-            outline: "none",
-          },
-        }),
-      }}
+      getOptionLabel={(option) => t(option.label)}
+      renderOption={(option) => <LanguageItem {...option} classes={classes} />}
+      renderInput={(params) => <LanguageInput {...params} language={selectedLanguage} classes={classes} />}
     />
   );
 }

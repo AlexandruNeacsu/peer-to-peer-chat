@@ -40,6 +40,7 @@
     "react-resizable": "^1.10.1",
     "react-router-dom": "^5.1.2",
     "react-scripts": "3.4.0",
+    "react-select": "^3.1.0",
     "simple-peer": "^9.7.2",
     "yup": "^0.28.5"
   },

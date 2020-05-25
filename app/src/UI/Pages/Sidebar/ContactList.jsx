@@ -25,11 +25,11 @@ const useStyles = makeStyles(theme => ({
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(2),
   },
+  subheaderText: {
+    flexGrow: 1,
+  },
   contact: {
     marginRight: theme.spacing(1),
-  },
-  contactAddButton: {
-    float: "right",
   },
   searchContainer: {
     paddingLeft: theme.spacing(1),
@@ -96,10 +96,10 @@ export default function ContactList({ contacts, selectedContact, setSelectedCont
     <div>
 
       <div className={classes.subheader}>
-        <Typography variant="h3" color="textPrimary">
+        <Typography className={classes.subheaderText} variant="h3" color="textPrimary">
           {t("Contacts.ContactList")}
         </Typography>
-        <IconButton color="primary" className={classes.contactAddButton} onClick={onAdd}>
+        <IconButton color="primary" onClick={onAdd}>
           <PersonAddIcon />
         </IconButton>
       </div>

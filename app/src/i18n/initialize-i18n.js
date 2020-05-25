@@ -20,10 +20,19 @@ export function getLanguageOptions() {
 
 
 export default function initializeI18n() {
-  addLocale(localeRo);
-
+  // load translations and locales
   setTranslations({ en, ro });
-  setLocale("ro");
-
+  addLocale("ro", localeRo);
   moment.locale("ro", momentRo);
+
+  // set translation and locale
+  if (localStorage.getItem("language")) {
+    const { locale } = JSON.parse(localStorage.getItem("language"));
+
+    setLocale(locale);
+    moment.locale(locale);
+  } else {
+    setLocale("ro");
+    // moment uses the last loaded locale
+  }
 }
