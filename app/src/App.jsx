@@ -60,6 +60,14 @@ function App() {
           localStorage.setItem("id", id);
           localStorage.setItem("username", username); // !!!TODO
 
+          const defaultSignalingServers = [{ label: "default", value: "localhost", port: 9090, type: "dns4" }];
+          localStorage.setItem("signal-servers", JSON.stringify(defaultSignalingServers));
+          localStorage.setItem("signal-selected-servers", JSON.stringify(defaultSignalingServers));
+
+          const defaultNameServer = { label: "default", value: "localhost:8080" };
+          localStorage.setItem("name-server", JSON.stringify(defaultNameServer));
+          localStorage.setItem("name-selected-server", JSON.stringify(defaultNameServer));
+
           const database = DatabaseHandler.getDatabase();
           await database.users.add({ id, username, peerIdJSON: userPeerInfo.id.toJSON() });
         }

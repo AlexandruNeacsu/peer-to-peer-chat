@@ -70,7 +70,12 @@ export default async function createNode(id) {
 
   const peerIdStr = peerInfo.id.toB58String();
 
-  peerInfo.multiaddrs.add(`/dns4/localhost/tcp/9090/ws/p2p-webrtc-star/p2p/${peerIdStr}`);
+  const signalingServers = JSON.parse(localStorage.getItem("signal-selected-servers"));
+
+  signalingServers.forEach(
+    ({ value, port, type }) => peerInfo.multiaddrs.add(`/${type}/${value}/tcp/${port}/ws/p2p-webrtc-star/p2p/${peerIdStr}`)
+  );
+
   peerInfo.multiaddrs.add("/ip4/0.0.0.0/tcp/0");
 
   return new PeerNode(peerInfo);

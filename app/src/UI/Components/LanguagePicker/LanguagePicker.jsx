@@ -9,9 +9,6 @@ import { getLanguageOptions } from "../../../i18n/initialize-i18n";
 
 
 const useStyles = makeStyles(() => ({
-  select: {
-    flexGrow: 1,
-  },
   avatar: {
     width: "32px",
     height: "32px",
@@ -28,7 +25,7 @@ const LanguageItem = ({ label, avatar, classes }) => (
   </>
 );
 
-const LanguageInput = ({ inputProps, language, ...other }) => (
+const LanguageInput = ({ inputProps, ...other }) => (
   <TextField
     {...other}
     label={t("Languages.Label")}
@@ -59,7 +56,6 @@ export default function LanguagePicker() {
     }
   };
 
-  // also take the user supplied classes and add it to ours
   return (
     <Autocomplete
       value={selectedLanguage}
@@ -69,7 +65,7 @@ export default function LanguagePicker() {
       onChange={handleChange}
       getOptionLabel={(option) => t(option.label)}
       renderOption={(option) => <LanguageItem {...option} classes={classes} />}
-      renderInput={(params) => <LanguageInput {...params} language={selectedLanguage} classes={classes} />}
+      renderInput={(params) => <LanguageInput {...params} />}
     />
   );
 }

@@ -13,9 +13,9 @@ import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import UserAvatar from "../../Components/UserAvatar";
 import ContactList from "./ContactList";
-import RequestsPopper from "./RequestsPopper";
-import ContactOptionsPopover from "./ContactOptionsPopover";
-import SettingsPopover from "./SettingsPopover";
+import RequestsPopper from "./Popovers/RequestsPopper";
+import ContactOptionsPopover from "./Popovers/ContactOptionsPopover";
+import SettingsPopover from "./Popovers/SettingsPopover";
 
 const drawerWidth = 280;
 

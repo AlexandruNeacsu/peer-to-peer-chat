@@ -50,6 +50,10 @@
       "Refuse": "Refuză"
     }
   },
+  "Servers": {
+    "SignalServer": "Server de signaling",
+    "NameServer":  "Registru nume"
+  },
   "Errors": {
     "Required": "Camp necesar",
     "Pozitive": "Numarul introdus trebuie sa fie pozitiv",

@@ -42,6 +42,10 @@
       "Refuse": "Refuză"
     }
   },
+  "Servers": {
+    "SignalServer": "Signaling server",
+    "NameServer":  "Name server"
+  },
   "Errors": {
     "Required": "Field is required",
     "Pozitive": "The number must pe pozitve",

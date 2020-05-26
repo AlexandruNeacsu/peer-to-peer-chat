@@ -4,12 +4,14 @@ import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
-import LanguagePicker from "../../Components/LanguagePicker";
+import LanguagePicker from "../../../Components/LanguagePicker";
+import SignalServerPicker from "../../../Components/SignalServerPicker";
 
 
 const useStyles = makeStyles(() => ({
-  option: {
+  container: {
     minWidth: "200px",
+    maxWidth: "500px",
   },
 }));
 
@@ -30,10 +32,13 @@ const ContactOptionsPopover = ({ open, anchorEl, onClose }) => {
         horizontal: "center",
       }}
     >
-      <Paper elevation={4}>
+      <Paper elevation={4} className={classes.container}>
         <List>
-          <ListItem className={classes.option}>
-              <LanguagePicker />
+          <ListItem>
+            <LanguagePicker />
+          </ListItem>
+          <ListItem>
+            <SignalServerPicker />
           </ListItem>
         </List>
       </Paper>
