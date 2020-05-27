@@ -29,7 +29,8 @@
     "Search": "Caută contact",
     "Add": "Adaugă contact",
     "Send": "Trimite",
-    "Write": "Scrie un mesaj..."
+    "Write": "Scrie un mesaj...",
+    "DeletedSuccess": "Contact sterş cu succes!"
   },
   "Options": {
     "Info": "Detalii contact",
@@ -56,6 +57,21 @@
     "Value": "Adresă",
     "Port":  "Port",
     "Type": "Tip"
+  },
+  "Requests": {
+    "Sent": "Cereri trimise",
+    "Received": "Cereri primite",
+    "Accept": "Acceptă",
+    "Reject": "Refuză",
+    "Rejected": "Cererea trimisă către %{username} a fost refuzată!",
+    "Accepted": "Cererea trimisă către %{username} a fost acceptată!",
+    "AcceptSuccess": "Cerere acceptată cu succes!",
+    "RejectSuccess": "Cerere refuzată cu succes!",
+    "DeleteSuccess": "Cerere stearsă cu succes!",
+    "Errors": {
+      "NotOnline": "Nu s-a putut accepta cererea. Utilizatorul probabil nu este online, incearcă mai târziu!",
+      "RejectError": "Refuzul nu s-a putut trimite! Cerere refuzată doar local."
+    }
   },
   "Errors": {
     "Required": "Câmp necesar",

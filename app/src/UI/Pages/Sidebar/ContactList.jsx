@@ -15,6 +15,7 @@ import InputBase from "@material-ui/core/InputBase";
 import UserAvatar from "../../Components/UserAvatar";
 
 import "react-chat-elements-alex/dist/main.css";
+import GroupIcon from "@material-ui/icons/Group";
 
 const useStyles = makeStyles(theme => ({
   subheader: {
@@ -74,7 +75,7 @@ const useStyles = makeStyles(theme => ({
  * @param {function} setSelectedContact
  * @param {function} handleAdd TODO rename, we are not adding, just opening a modal
  */
-export default function ContactList({ contacts, selectedContact, setSelectedContact, onAdd }) {
+export default function ContactList({ contacts, selectedContact, setSelectedContact, onAdd, onPopoverOpen, requestsCount }) {
   const classes = useStyles();
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [filter, setFilter] = useState("");
@@ -101,6 +102,14 @@ export default function ContactList({ contacts, selectedContact, setSelectedCont
         </Typography>
         <IconButton color="primary" onClick={onAdd}>
           <PersonAddIcon />
+        </IconButton>
+        <IconButton
+          aria-label="receivedRequests"
+          onClick={onPopoverOpen}
+        >
+          <Badge badgeContent={requestsCount} color="primary">
+            <GroupIcon />
+          </Badge>
         </IconButton>
       </div>
 

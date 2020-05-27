@@ -21,6 +21,7 @@ export const ADD_EVENTS = {
   RECEIVED: "RECEIVED",
   ACCEPTED: "ACCEPTED",
   REJECTED: "REJECTED",
+  DELETED: "DELETED"
 };
 
 export const CHAT_MESSAGE_TYPE = {

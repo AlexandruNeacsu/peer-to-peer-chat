@@ -184,6 +184,8 @@ export default class AddProtocol extends BaseProtocol {
 
     await this.database.requests.delete(request.id);
 
+    this.emit(ADD_EVENTS.REJECTED, request);
+
     // TODO: resend accept when peer is online
     const peerId = PeerId.createFromB58String(request.id);
     const info = await this.node.peerRouting.findPeer(peerId); // TODO: handle not found error
@@ -192,7 +194,11 @@ export default class AddProtocol extends BaseProtocol {
     await sendData(stream.sink, [ADD_ENUM.REJECTED]); // TODO what if they didn't receive the message?
 
     // TODO: maybe await for confirmation?
+  };
 
-    this.emit(ADD_EVENTS.REJECTED, request);
+  delete = async (id) => {
+    await this.database.requests.delete(id);
+
+    this.emit(ADD_EVENTS.DELETED, id);
   };
 }

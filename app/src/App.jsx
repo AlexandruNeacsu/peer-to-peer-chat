@@ -4,26 +4,21 @@ import axios from "axios";
 import Dexie from "dexie";
 import PeerInfo from "peer-info";
 import { t } from "react-i18nify";
-import { ThemeProvider } from "@material-ui/core/styles";
+import { useSnackbar } from "notistack";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Auth from "./UI/Pages/Auth";
 import Chat from "./UI/Pages/Chat/Chat";
 import DatabaseHandler from "./Database";
 import Loader from "./UI/Components/Loader";
-import Snackbar from "./UI/Components/Snackbar";
-import theme from "./UI/Theme";
 
 
 function App() {
+  const { enqueueSnackbar } = useSnackbar();
   // TODO ensure integrity of data!(ex: someone changes username using the console)
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [needsRegister, setNeedsRegister] = useState(true);
-  const [snackBarOptions, setSnackBarOptions] = useState({
-    variant: "",
-    message: "",
-    open: false,
-  });
+
 
   useEffect(() => {
     async function checkIfUserIsOnMachine() {
@@ -74,16 +69,14 @@ function App() {
       } else {
         await DatabaseHandler.initDatabase(password);
       }
+      enqueueSnackbar(t("Auth.LoginSuccess"), { variant: "success" });
 
       setIsAuthenticated(true);
       setIsLoading(false);
     } catch (error) {
       if (error.response) {
-        setSnackBarOptions({
-          variant: "error",
-          message: t("Errors.RegisterUsernameError"), // TODO: add to translations
-          open: true,
-        });
+        enqueueSnackbar(t("Errors.RegisterUsernameError"), { variant: "error" });
+
         console.log(error.response.data);
         console.log(error.response.status);
         console.log(error.response.headers);
@@ -101,7 +94,7 @@ function App() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <>
       <CssBaseline />
       <Router>
         {
@@ -128,14 +121,7 @@ function App() {
           )
         }
       </Router>
-
-      <Snackbar
-        variant={snackBarOptions.variant}
-        message={snackBarOptions.message}
-        open={snackBarOptions.open}
-        handleClose={() => setSnackBarOptions(prevState => ({ ...prevState, open: false }))}
-      />
-    </ThemeProvider>
+    </>
   );
 }
 

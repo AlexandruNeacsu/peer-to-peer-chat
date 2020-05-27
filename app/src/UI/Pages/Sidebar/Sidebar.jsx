@@ -3,17 +3,15 @@ import { makeStyles } from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
-import GroupIcon from "@material-ui/icons/Group";
 import CallIcon from "@material-ui/icons/Call";
 import VideoCallIcon from "@material-ui/icons/VideoCall";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
 import SettingsIcon from "@material-ui/icons/Settings";
-import Badge from "@material-ui/core/Badge";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import UserAvatar from "../../Components/UserAvatar";
 import ContactList from "./ContactList";
-import RequestsPopper from "./Popovers/RequestsPopper";
+import RequestsPopper from "./Popovers/RequestsPopover";
 import ContactOptionsPopover from "./Popovers/ContactOptionsPopover";
 import SettingsPopover from "./Popovers/SettingsPopover";
 
@@ -66,6 +64,7 @@ function Sidebar({
   sentRequests,
   handleAcceptRequest,
   handleRejectRequest,
+  handleDeleteRequest,
   onCall,
   hasCamera,
   children,
@@ -143,14 +142,6 @@ function Sidebar({
         <div className={classes.userItems}>
           <UserAvatar className={classes.userAvatar} username={username} isOnline={isOnline} showBadge showUsername />
           <IconButton
-            aria-label="receivedRequests"
-            onClick={handlePopoverOpen("requests")}
-          >
-            <Badge badgeContent={receivedRequests.length + sentRequests.length} color="primary">
-              <GroupIcon />
-            </Badge>
-          </IconButton>
-          <IconButton
             aria-label="settings"
             onClick={handlePopoverOpen("settings")}
           >
@@ -165,6 +156,8 @@ function Sidebar({
           selectedContact={selectedContact}
           setSelectedContact={handleSelectContact}
           onAdd={onAddContact}
+          onPopoverOpen={handlePopoverOpen("requests")}
+          requestsCount={receivedRequests.length + sentRequests.length}
         />
 
         <RequestsPopper
@@ -173,8 +166,9 @@ function Sidebar({
           onClose={handlePopoverClose}
           receivedRequests={receivedRequests}
           sentRequests={sentRequests}
-          handleAccept={handleAcceptRequest}
-          handleReject={handleRejectRequest}
+          onAccept={handleAcceptRequest}
+          onReject={handleRejectRequest}
+          onDelete={handleDeleteRequest}
         />
 
         <ContactOptionsPopover

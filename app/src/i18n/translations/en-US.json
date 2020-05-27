@@ -25,7 +25,8 @@
     "ContactList": "Contacts",
     "Search": "Search contact",
     "Add": "Add contact",
-    "Write": "Write a message..."
+    "Write": "Write a message...",
+    "DeletedSuccess": "Contact deleted successfully!"
   },
   "Options": {
     "Info": "Contact info",
@@ -48,6 +49,19 @@
   },
   "AddSignal": {
     "Title": "Add signal server"
+  },
+  "Requests": {
+    "Sent": "Sent requests",
+    "Received": "Received requests",
+    "Rejected": "Request sent to %{username} was rejected!",
+    "Accepted": "Request sent to %{username} was accepted!",
+    "AcceptSuccess": "Request accepted successfully!",
+    "RejectSuccess": "Request rejected successfully!",
+    "DeleteSuccess": "Request deleted successfully!",
+    "Errors": {
+      "NotOnline": "Couldn't accept the request. The user is probably not online, try again latter!",
+      "RejectError": "Rejection couldn't be sent! Request rejected only locally."
+    }
   },
   "Errors": {
     "Required": "Field is required",

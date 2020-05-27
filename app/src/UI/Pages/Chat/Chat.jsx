@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import PeerId from "peer-id";
+import { t } from "react-i18nify";
+import { useSnackbar } from "notistack";
+import IconButton from "@material-ui/core/IconButton";
+import ClearIcon from "@material-ui/icons/Clear";
 import ContactPage from "../ContactPage";
 import AddContactDialog from "./AddContactDialog";
 import DatabaseHandler from "../../../Database";
@@ -11,6 +15,7 @@ import { ADD_EVENTS, CALL_EVENTS, CHAT_EVENTS } from "../../../Protocols/constan
 import User from "../../../Database/Schemas/User";
 import CallAlert from "./CallAlert";
 import VideoCall from "../VideoCall";
+
 
 /**
  *
@@ -52,6 +57,8 @@ ring.loop = true;
 const notification = new Audio("sounds/notification.wav");
 
 function Chat() {
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+
   // TODO clean this mess
   const [username, setUsername] = useState(localStorage.getItem("username"));
   const [contacts, setContacts] = useState([]);
@@ -158,16 +165,55 @@ function Chat() {
 
             if (request.sent) {
               setSentRequests(prevRequests => prevRequests.filter(req => req.id !== request.id));
+
+              enqueueSnackbar(
+                t("Requests.Accepted", { username: contact.username }),
+                {
+                  variant: "info",
+                  persist: true,
+                  action: key => (
+                    <IconButton onClick={() => closeSnackbar(key)}>
+                      <ClearIcon />
+                    </IconButton>
+                  )
+                }
+              );
             } else {
               setReceivedRequests(prevRequests => prevRequests.filter(req => req.id !== request.id));
             }
           })
           .on(ADD_EVENTS.REJECTED, (request) => {
             if (request.sent) {
-              setSentRequests(prevRequests => prevRequests.filter(prev => prev.id !== request.id));
+              let requestUsername;
+
+              setSentRequests(prevRequests => prevRequests.filter(prev => {
+                const isFound = prev.id === request.id;
+
+                if (isFound) {
+                  requestUsername = prev.username;
+                }
+
+                return !isFound;
+              }));
+
+              enqueueSnackbar(
+                t("Requests.Rejected", { username: requestUsername }),
+                {
+                  variant: "info",
+                  persist: true,
+                  action: key => (
+                    <IconButton onClick={() => closeSnackbar(key)}>
+                      <ClearIcon />
+                    </IconButton>
+                  )
+                }
+              );
             } else {
               setReceivedRequests(prevRequests => prevRequests.filter(prev => prev.id !== request.id));
             }
+          })
+          .on(ADD_EVENTS.DELETED, (id) => {
+            setSentRequests(prevRequests => prevRequests.filter(prev => prev.id !== id));
           });
 
         node
@@ -246,7 +292,7 @@ function Chat() {
     if (!ownNode) {
       getOwnNode();
     }
-  }, [ownNode, contacts, selectedContact, call]);
+  }, [ownNode, contacts, selectedContact, call, enqueueSnackbar, closeSnackbar]);
 
   /* CHECK MEDIA DEVICES */
   useEffect(() => {
@@ -307,6 +353,8 @@ function Chat() {
     newContact.on(User.EVENTS.DELETE, () => {
       setSelectedContact(null);
       setContacts(prevContacts => prevContacts.filter(contact => contact.id !== newContact.id));
+
+      enqueueSnackbar(t("Contacts.DeletedSuccess"), { variant: "success" });
     });
 
     if (newContact.chatItem.unread && (!selectedContact || (newContact.id !== selectedContact.id))) {
@@ -354,6 +402,7 @@ function Chat() {
             contacts={contacts}
             handleAcceptRequest={ownNode.getImplementation(PROTOCOLS.ADD).accept}
             handleRejectRequest={ownNode.getImplementation(PROTOCOLS.ADD).reject}
+            handleDeleteRequest={ownNode.getImplementation(PROTOCOLS.ADD).delete}
             onAddContact={() => setModalOpen(true)}
             selectedContact={selectedContact}
             handleSelectContact={handleSelectContact}

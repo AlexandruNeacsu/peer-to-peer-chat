@@ -29,6 +29,7 @@
     "material-ui-dropzone": "^3.0.0",
     "moment": "^2.25.3",
     "multihashing-async": "^0.8.1",
+    "notistack": "^0.9.16",
     "peer-id": "^0.13.12",
     "peer-info": "^0.17.5",
     "react": "^16.13.1",
