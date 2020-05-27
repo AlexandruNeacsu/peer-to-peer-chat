@@ -221,7 +221,10 @@ function Chat() {
               }));
             }
           })
-          .on(CALL_EVENTS.ACCEPTED, () => setIsInCall(true))
+          .on(CALL_EVENTS.ACCEPTED, () => {
+            ring.pause();
+            setIsInCall(true);
+          })
           .on(CALL_EVENTS.CLOSE, () => {
             ring.pause();
 
@@ -326,6 +329,7 @@ function Chat() {
 
 
     if (willAnswer) {
+      ring.pause();
       setIsInCall(true);
     } else {
       setCall(null);
