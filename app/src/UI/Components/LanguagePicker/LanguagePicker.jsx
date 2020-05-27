@@ -8,10 +8,10 @@ import TextField from "@material-ui/core/TextField";
 import { getLanguageOptions } from "../../../i18n/initialize-i18n";
 
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(theme => ({
   avatar: {
-    width: "32px",
-    height: "32px",
+    width: theme.spacing(4),
+    height: theme.spacing(4),
   },
   typography: {
     marginLeft: "0.5em",

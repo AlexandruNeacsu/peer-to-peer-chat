@@ -7,47 +7,61 @@ import AddIcon from "@material-ui/icons/Add";
 import DeleteIcon from "@material-ui/icons/Delete";
 import IconButton from "@material-ui/core/IconButton";
 import CircularProgress from "@material-ui/core/CircularProgress";
-import ListItemText from "@material-ui/core/ListItemText";
+import Typography from "@material-ui/core/Typography";
 import AddSignalServer from "../../Pages/Sidebar/Popovers/AddSignalServer";
-import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
-import ListItem from "@material-ui/core/ListItem";
 
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles((theme) => ({
   container: {
     display: "flex",
+    width: "100%",
   },
   autocomplete: {
     flexGrow: 1,
   },
   serverItem: {
-    marginLeft: "0.5em",
+    display: "flex",
+    marginLeft: theme.spacing(1),
     flexGrow: 1,
   },
   serverItemText: {
+    display: "flex",
+    flexWrap: "wrap",
     flexGrow: 1,
+    overflowY: "visible",
+  },
+  serverItemTextPrimary: {
+    flexBasis: "100%",
+  },
+  serverItemIcon: {
+    marginLeft: theme.spacing(1),
   },
 }));
 
 const ServerItem = ({ label, value, port, type, classes, isRemovable, onRemove }) => (
-  <ListItem className={classes.serverItem}>
-    <ListItemText className={classes.serverItemText} primary={label} secondary={`${type}/${value}:${port}`} />
+  <div className={classes.serverItem}>
+    <div className={classes.serverItemText}>
+      <Typography color="textPrimary" className={classes.serverItemTextPrimary}>{label}</Typography>
+      <Typography color="textSecondary">{`${type}/${value}:${port}`}</Typography>
+    </div>
     {
       isRemovable && (
-        <ListItemSecondaryAction>
-          <IconButton onClick={(event) => onRemove(event, { label, value, port, type })}>
-            <DeleteIcon />
-          </IconButton>
-        </ListItemSecondaryAction>
+        <IconButton
+          className={classes.serverItemIcon}
+          onClick={(event) => onRemove(event, { label, value, port, type })}
+        >
+          <DeleteIcon />
+        </IconButton>
       )
     }
-  </ListItem>
+  </div>
 );
 
 const ServerInput = ({ inputProps, isLoading, ...other }) => (
   <TextField
     {...other}
     variant="outlined"
+    label={t("Servers.SignalServer")}
     inputProps={{
       ...inputProps,
       autoComplete: "new-password", // disable autocomplete and autofill
@@ -75,7 +89,24 @@ export default function SignalServerPicker() {
   useEffect(() => {
     const loadDatabaseData = async () => {
       const initialOptions = JSON.parse(localStorage.getItem("signal-servers"));
-      const selected = JSON.parse(localStorage.getItem("signal-selected-servers"));
+      const selectedStorage = JSON.parse(localStorage.getItem("signal-selected-servers"));
+
+
+      // we need the same references in both arrays for the autocomplete
+      // https://github.com/mui-org/material-ui/blob/f62b4b4fc1c10fc7304720d3903fcfcd097a23dd/packages/material-ui-lab/src/useAutocomplete/useAutocomplete.js#L969
+      const selected = [];
+      initialOptions.forEach(item => {
+        const isSelected = selectedStorage.some(s => (
+          s.label === item.label
+          && s.value === item.value
+          && s.port === item.port
+          && s.type === item.type
+        ));
+
+        if (isSelected) {
+          selected.push(item);
+        }
+      });
 
       setOptions(initialOptions);
       setSelectedServers(selected);
@@ -88,32 +119,27 @@ export default function SignalServerPicker() {
 
 
   const handleChange = (event, servers) => {
-    console.log(servers);
-
     if (servers.length) {
-      localStorage.setItem("signal-selected-servers", JSON.stringify(selectedServers));
+      localStorage.setItem("signal-selected-servers", JSON.stringify(servers));
       setSelectedServers(servers);
     }
   };
 
   const handleRemove = (event, { label, value, port, type }) => {
     event.preventDefault();
-    console.log(label, value, port, type)
+    event.stopPropagation();
 
-    console.log(options)
-
-    const newOptions = options.filter(option => (
+    const isDifferentFilter = option => (
       option.label !== label
       || option.value !== value
       || option.port !== port
       || option.type !== type
-    ));
+    );
 
-    console.log(newOptions)
+    const newOptions = options.filter(isDifferentFilter);
 
-
+    setSelectedServers(selectedServers.filter(isDifferentFilter));
     setOptions(newOptions);
-    setSelectedServers(newOptions.filter(option => option.selected));
     localStorage.setItem("signal-servers", JSON.stringify(newOptions));
   };
 
@@ -140,7 +166,6 @@ export default function SignalServerPicker() {
           autoHighlight
           fullWidth
           multiple
-          label={t("Servers.SignalServer")}
           loading={isLoading}
           onChange={handleChange}
           getOptionLabel={(option) => option.label}

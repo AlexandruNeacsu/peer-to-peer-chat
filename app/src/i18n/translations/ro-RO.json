@@ -5,10 +5,6 @@
     "English": "English"
   },
   "Navigation": {
-    "Dashboard": "Dashboard",
-    "Projects": "Proiecte",
-    "Team": "Echipa",
-    "Profile": "Profil",
     "Logout": "Logout"
   },
   "Auth": {
@@ -54,15 +50,20 @@
     "SignalServer": "Server de signaling",
     "NameServer":  "Registru nume"
   },
+  "AddSignal": {
+    "Title": "Adaugă server de signaling",
+    "Label":  "Etichetă",
+    "Value": "Adresă",
+    "Port":  "Port",
+    "Type": "Tip"
+  },
   "Errors": {
-    "Required": "Camp necesar",
-    "Pozitive": "Numarul introdus trebuie sa fie pozitiv",
-    "Subunit": "Numarul trebuie sa fie cuprins intre 1 si 100",
-    "Number": "Valoarea introdusa trebuie sa fie de tip numeric",
+    "Required": "Câmp necesar",
+    "Pozitive": "Numărul introdus trebuie să fie pozitiv",
+    "Subunit": "Numărul trebuie să fie cuprins intre 1 si 100",
+    "Number": "Valoarea introdusă trebuie sa fie de tip numeric",
     "Min": "Sunt necesare %{value} %{name}",
     "Max": "Maxim %{value} %{name}",
-    "MinDate": "Nu poti selecta o data mai mica decat %{date}",
-    "MaxDate": "Data maxima este %{date}",
     "FetchDataError": "Nu s-au putut incarca datele! Incearca mai tarziu."
   }
 }

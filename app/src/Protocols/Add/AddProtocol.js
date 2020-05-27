@@ -24,8 +24,6 @@ export default class AddProtocol extends BaseProtocol {
       const messages = await receiveData(stream.source);
       const message = messages.shift().toString();
 
-      console.log(message)
-
       switch (message) {
         case ADD_ENUM.ADD: {
           const request = { id, username: messages.shift().toString() };
@@ -133,12 +131,8 @@ export default class AddProtocol extends BaseProtocol {
 
         await sendData(stream.sink, [ADD_ENUM.ADD, ownUsername]);
 
-        console.log("aaa")
-
         const messages = await receiveData(stream.source); //TODO
         const message = messages.shift().toString();
-
-        console.log(message)
 
         if (message === ADD_ENUM.RECEIVED) {
           await this.database.requests.add({ ...request, sent: true }); // TODO: wouldn't contact id clash with request id?

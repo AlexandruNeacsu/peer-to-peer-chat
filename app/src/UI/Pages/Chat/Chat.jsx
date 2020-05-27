@@ -128,11 +128,8 @@ function Chat() {
         const node = await createNode(peerId);
 
         node.on("peer:connect", async (peerInfo) => {
-          // this should be done automatically by libp2p
-          // but it's not
-          // await node.dial(peerInfo);
-          // await node._dht._add(peerInfo);
-
+          // add relay addres for different signaling servers
+          node.peerInfo.multiaddrs.add(`/p2p/${peerInfo.id.toB58String()}/p2p-circuit/p2p/${node.peerInfo.id.toB58String()}`);
 
           await updateContactConnectionStatus(peerInfo, true);
         });
@@ -194,10 +191,6 @@ function Chat() {
         node
           .getImplementation(PROTOCOLS.CALL)
           .on(CALL_EVENTS.CALLED, async (caller, peerStream) => {
-            console.log("Called")
-            console.log(contacts)
-            console.log(caller)
-
             await ring.play();
 
             setCall({
@@ -228,10 +221,8 @@ function Chat() {
               }));
             }
           })
-          .on(CALL_EVENTS.ACCEPTED, () => console.log("ACC") || setIsInCall(true))
+          .on(CALL_EVENTS.ACCEPTED, () => setIsInCall(true))
           .on(CALL_EVENTS.CLOSE, () => {
-            console.log("CLOSE")
-
             ring.pause();
 
             setIsInCall(false);

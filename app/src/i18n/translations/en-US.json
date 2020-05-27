@@ -27,7 +27,7 @@
     "Add": "Add contact",
     "Write": "Write a message..."
   },
-  "Options" : {
+  "Options": {
     "Info": "Contact info",
     "Clear": "Clear conversation",
     "Delete": "Remove contact"
@@ -44,7 +44,10 @@
   },
   "Servers": {
     "SignalServer": "Signaling server",
-    "NameServer":  "Name server"
+    "NameServer": "Name server"
+  },
+  "AddSignal": {
+    "Title": "Add signal server"
   },
   "Errors": {
     "Required": "Field is required",

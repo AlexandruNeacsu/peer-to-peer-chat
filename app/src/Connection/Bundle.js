@@ -36,6 +36,13 @@ class PeerNode extends Libp2p {
           timeout: 10e3,
         },
       },
+      relay: {
+        enabled: true,
+        hop: {
+          enabled: true,
+          active: true
+        }
+      }
     };
 
     super({
@@ -75,8 +82,6 @@ export default async function createNode(id) {
   signalingServers.forEach(
     ({ value, port, type }) => peerInfo.multiaddrs.add(`/${type}/${value}/tcp/${port}/ws/p2p-webrtc-star/p2p/${peerIdStr}`)
   );
-
-  peerInfo.multiaddrs.add("/ip4/0.0.0.0/tcp/0");
 
   return new PeerNode(peerInfo);
 }

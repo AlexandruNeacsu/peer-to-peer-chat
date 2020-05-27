@@ -8,11 +8,13 @@ import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Button from "@material-ui/core/Button";
-import { FormikSelect, FormikTextField } from "../../../Components/FormFields";
 import { makeStyles } from "@material-ui/core/styles";
+import useMediaQuery from "@material-ui/core/useMediaQuery";
+import useTheme from "@material-ui/core/styles/useTheme";
+import { FormikSelect, FormikTextField } from "../../../Components/FormFields";
 
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles(() => ({
   header: {
     padding: "0.3em",
   },
@@ -35,9 +37,11 @@ const typesValidation = types.map(type => type.value);
 
 function AddSignalServer({ open, onClose }) {
   const classes = useStyles();
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <Dialog open={open} onClose={() => onClose(null)} aria-labelledby="form-add-signal-server">
+    <Dialog open={open} onClose={() => onClose(null)} aria-labelledby="form-add-signal-server" fullScreen={fullScreen}>
       <DialogTitle>{t("AddSignal.Title")}</DialogTitle>
       <DialogContent>
         <Formik
@@ -62,7 +66,6 @@ function AddSignalServer({ open, onClose }) {
           })}
           onSubmit={(server, { setSubmitting }) => {
             setSubmitting(false);
-
 
             onClose({
               ...server,
@@ -109,7 +112,7 @@ function AddSignalServer({ open, onClose }) {
 
 
             <DialogActions>
-              <Button onClick={onClose} color="primary">
+              <Button onClick={() => onClose(null)} color="primary">
                 {t("Buttons.Cancel")}
               </Button>
               <Button color="primary" type="submit">
