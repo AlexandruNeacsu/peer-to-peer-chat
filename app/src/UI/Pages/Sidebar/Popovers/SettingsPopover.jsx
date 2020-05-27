@@ -3,6 +3,8 @@ import Popover from "@material-ui/core/Popover";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import Paper from "@material-ui/core/Paper";
+import Alert from "@material-ui/lab/Alert";
+import { t } from "react-i18nify";
 import LanguagePicker from "../../../Components/LanguagePicker";
 import SignalServerPicker from "../../../Components/SignalServerPicker";
 
@@ -28,6 +30,9 @@ const ContactOptionsPopover = ({ open, anchorEl, onClose }) => (
         </ListItem>
         <ListItem>
           <SignalServerPicker />
+        </ListItem>
+        <ListItem>
+          <Alert variant="outlined" severity="info">{t("Alerts.Info.Signaling")}</Alert>
         </ListItem>
       </List>
     </Paper>

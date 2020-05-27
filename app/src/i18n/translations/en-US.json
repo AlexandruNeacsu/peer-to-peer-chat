@@ -58,5 +58,10 @@
     "Max": "You can only have %{value} %{name}",
     "MinDate": "Minimum date %{date}",
     "MaxDate": "Maximum date is %{date}"
+  },
+  "Alerts": {
+    "Info": {
+      "Signaling": "Changing signaling settings requires a refresh."
+    }
   }
 }

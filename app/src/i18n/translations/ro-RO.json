@@ -65,5 +65,10 @@
     "Min": "Sunt necesare %{value} %{name}",
     "Max": "Maxim %{value} %{name}",
     "FetchDataError": "Nu s-au putut incarca datele! Incearca mai tarziu."
+  },
+  "Alerts": {
+    "Info": {
+      "Signaling": "Modificarea setărilor de signaling necesită reîmprospătarea pagini."
+    }
   }
 }
