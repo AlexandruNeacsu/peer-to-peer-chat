@@ -319,14 +319,14 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
       } else if (message) {
         const formattedReplyMessage = { ...replyMessage };
 
-        if (formattedReplyMessage.originalData.file) {
+        if (replyMessage && formattedReplyMessage.originalData.file) {
           formattedReplyMessage.text = formattedReplyMessage.originalData.file.name;
 
           delete formattedReplyMessage.data;
           delete formattedReplyMessage.originalData.file;
         }
 
-        const sentText = await sendText(selectedContact, message, formattedReplyMessage);
+        const sentText = await sendText(selectedContact, message, replyMessage ? formattedReplyMessage : null);
 
         sentMessages.push(sentText);
       }
@@ -346,7 +346,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
       console.log(error);
       console.log(error.message);
     }
-  }, [files, sendFile, selectedContact, message, sendText]);
+  }, [files, message, sendFile, selectedContact, replyMessage, sendText]);
 
   const handleKeyDown = useCallback(async (event) => {
     if (!event.shiftKey && event.key === "Enter") {
@@ -460,7 +460,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
         <IconButton
           aria-label={t("Contacts.Send")}
           color={selectedContact.isConnected && message ? "primary" : undefined}
-          disabled={!selectedContact.isConnected || !message}
+          disabled={!selectedContact.isConnected || (!message && !files.length)}
           onClick={handleSubmit}
         >
           <SendIcon />
