@@ -30,14 +30,18 @@ export const CHAT_MESSAGE_TYPE = {
 };
 
 export const CHAT_MESSAGE_STATUS = {
+  OK: "OK",
   RECEIVED: "received",
   SENT: "sent",
   REFUSED: "REFUSED",
+  ACKNOWLEDGED: "ACKNOWLEDGED",
+
 };
 
 export const CHAT_EVENTS = {
   RECEIVED: "received",
   SENT: "sent",
+  BLOCKED: "BLOCKED"
 };
 
 export const CALL_MESSAGES = {

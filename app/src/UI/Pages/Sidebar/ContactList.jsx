@@ -11,11 +11,11 @@ import List from "@material-ui/core/List";
 import SearchIcon from "@material-ui/icons/Search";
 import IconButton from "@material-ui/core/IconButton";
 import PersonAddIcon from "@material-ui/icons/PersonAdd";
+import GroupIcon from "@material-ui/icons/Group";
 import InputBase from "@material-ui/core/InputBase";
 import UserAvatar from "../../Components/UserAvatar";
 
 import "react-chat-elements-alex/dist/main.css";
-import GroupIcon from "@material-ui/icons/Group";
 
 const useStyles = makeStyles(theme => ({
   subheader: {
@@ -141,6 +141,7 @@ export default function ContactList({ contacts, selectedContact, setSelectedCont
                 image={contact.avatar}
                 showBadge
                 isOnline={contact.isConnected}
+                isBlocked={contact.isBlocked}
               />
             </ListItemAvatar>
 

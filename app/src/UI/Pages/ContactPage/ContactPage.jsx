@@ -451,7 +451,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
             multiline
             rowsMax="4"
             value={message}
-            disabled={!selectedContact.isConnected}
+            disabled={selectedContact.isBlocked || !selectedContact.isConnected}
             onKeyDown={handleKeyDown}
             onChange={(event) => setMessage(event.target.value)}
           />
@@ -460,7 +460,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
         <IconButton
           aria-label={t("Contacts.Send")}
           color={selectedContact.isConnected && message ? "primary" : undefined}
-          disabled={!selectedContact.isConnected || (!message && !files.length)}
+          disabled={selectedContact.isBlocked || !selectedContact.isConnected || (!message && !files.length)}
           onClick={handleSubmit}
         >
           <SendIcon />

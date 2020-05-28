@@ -11,7 +11,8 @@ export default class AddProtocol extends BaseProtocol {
     await this.database.transaction("rw", this.database.requests, this.database.users, async () => {
       await this.database.requests.delete(request.id);
 
-      await this.database.users.add({ id: request.id, username: request.username });
+      // user can be blocked, so create or update
+      await this.database.users.put({ id: request.id, username: request.username });
     });
   }
 
@@ -106,40 +107,48 @@ export default class AddProtocol extends BaseProtocol {
       how do we handle accepting the contact request locally
       and then send our response to the remote user when connection is available
       */
-      let request = await this.database.requests.get({ id: B58StringId });
+      let user;
+      let request;
 
-      if (request && !request.sent) {
-        // we received a request and we haven't accepted it
+      await this.database.transaction("r", this.database.users, this.database.requests, async () => {
+        user = await this.database.users.get({ id: B58StringId });
+        request = await this.database.requests.get({ id: B58StringId });
+      });
+      
+      if (!user || user.isBlocked) {
+        if (request && !request.sent) {
+          // we received a request and we haven't accepted it
 
-        await sendData(stream.sink, [ADD_ENUM.ACCEPTED]);
+          await sendData(stream.sink, [ADD_ENUM.ACCEPTED]);
 
-        const messages = await receiveData(stream.source);
-        const message = messages.shift().toString();
+          const messages = await receiveData(stream.source);
+          const message = messages.shift().toString();
 
-        if (message === ADD_ENUM.OK) {
-          await this._acceptRequest(request);
+          if (message === ADD_ENUM.OK) {
+            await this._acceptRequest(request);
 
-          this.emit(ADD_EVENTS.ACCEPTED, request);
-        } else {
-          // TODO crash, burn
-        }
+            this.emit(ADD_EVENTS.ACCEPTED, request);
+          } else {
+            // TODO crash, burn
+          }
 
-        // TODO: snackbar that it was accepted?
-      } else if (!request) {
-        // no request sent or received
-        request = new AddRequest(B58StringId, contactUsername);
+          // TODO: snackbar that it was accepted?
+        } else if (!request) {
+          // no request sent or received
+          request = new AddRequest(B58StringId, contactUsername);
 
-        await sendData(stream.sink, [ADD_ENUM.ADD, ownUsername]);
+          await sendData(stream.sink, [ADD_ENUM.ADD, ownUsername]);
 
-        const messages = await receiveData(stream.source); //TODO
-        const message = messages.shift().toString();
+          const messages = await receiveData(stream.source); //TODO
+          const message = messages.shift().toString();
 
-        if (message === ADD_ENUM.RECEIVED) {
-          await this.database.requests.add({ ...request, sent: true }); // TODO: wouldn't contact id clash with request id?
-          this.emit(ADD_EVENTS.SENT, request);
-        } else if (message === ADD_ENUM.ACCEPTED) {
-          await this.database.users.add({ id: request.id, username: request.username });
-          this.emit(ADD_EVENTS.ACCEPTED, request);
+          if (message === ADD_ENUM.RECEIVED) {
+            await this.database.requests.add({ ...request, sent: true }); // TODO: wouldn't contact id clash with request id?
+            this.emit(ADD_EVENTS.SENT, request);
+          } else if (message === ADD_ENUM.ACCEPTED) {
+            await this.database.users.put({ id: request.id, username: request.username });
+            this.emit(ADD_EVENTS.ACCEPTED, request);
+          }
         }
       }
     } catch (error) {

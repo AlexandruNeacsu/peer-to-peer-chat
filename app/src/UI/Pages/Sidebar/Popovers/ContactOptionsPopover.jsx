@@ -10,6 +10,8 @@ import InfoIcon from "@material-ui/icons/Info";
 import ClearAllIcon from "@material-ui/icons/ClearAll";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { t } from "react-i18nify";
+import BlockIcon from "@material-ui/icons/Block";
+import Tooltip from "@material-ui/core/Tooltip";
 
 
 const useStyles = makeStyles(theme => ({
@@ -21,13 +23,30 @@ const useStyles = makeStyles(theme => ({
 const ContactOptionsPopover = ({ open, anchorEl, selectedContact, onClose }) => {
   const classes = useStyles();
 
-  const handleInfo = () => {
-    // TODO
+  const handleClick = name => async () => {
+    if (!selectedContact) return;
+
+    // prevent popover from switching position
+    onClose();
+
+    switch (name) {
+      case "info":
+        break; // TODO
+      case "clear": {
+        await selectedContact.clearConversation();
+        break;
+      }
+      case "delete": {
+        await selectedContact.delete();
+        break;
+      }
+      case "block": {
+        await selectedContact.block();
+        break;
+      }
+      default:
+    }
   };
-
-  const handleClear = selectedContact ? selectedContact.clearConversation : null;
-
-  const handleDelete = selectedContact ? selectedContact.delete : null;
 
   return (
     <Popover
@@ -45,19 +64,25 @@ const ContactOptionsPopover = ({ open, anchorEl, selectedContact, onClose }) => 
     >
       <Paper elevation={4}>
         <List>
-          <ListItem button className={classes.option}>
+          <ListItem button className={classes.option} onClick={handleClick("info")}>
             <ListItemIcon>
               <InfoIcon />
             </ListItemIcon>
             <ListItemText>{t("Options.Info")}</ListItemText>
           </ListItem>
-          <ListItem button className={classes.option} onClick={handleClear}>
+          <ListItem button className={classes.option} onClick={handleClick("clear")}>
             <ListItemIcon>
               <ClearAllIcon />
             </ListItemIcon>
             <ListItemText>{t("Options.Clear")}</ListItemText>
           </ListItem>
-          <ListItem button className={classes.option} onClick={handleDelete}>
+          <ListItem button className={classes.option} onClick={handleClick("block")}>
+            <ListItemIcon>
+              <BlockIcon />
+            </ListItemIcon>
+            <ListItemText>{t("Options.Block")}</ListItemText>
+          </ListItem>
+          <ListItem button className={classes.option} onClick={handleClick("delete")}>
             <ListItemIcon>
               <DeleteIcon />
             </ListItemIcon>

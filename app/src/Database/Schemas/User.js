@@ -7,6 +7,7 @@ class User extends EventEmitter {
     MESSAGE: "MESSAGE",
     CLEAR: "CLEAR",
     DELETE: "DELETE",
+    BLOCK: "BLOCK"
   }
 
 
@@ -16,13 +17,15 @@ class User extends EventEmitter {
    * @param {Dexie} database
    * @param {{date: null, unread: number, subtitle: string, title: string} | null} chatItem
    * @param peerIdJSON
+   * @param isBlocked
    */
-  constructor(id, username, database, chatItem = null, peerIdJSON = null) {
+  constructor({ id, username, database, chatItem = null, peerIdJSON = null, isBlocked = false }) {
     super();
     // TODO add validations
     this.id = id;
     this.username = username;
     this.database = database;
+    this.isBlocked = isBlocked;
 
     this.avatar = null;
 
@@ -61,8 +64,17 @@ class User extends EventEmitter {
       await this.database.users.where({ id: this.id }).delete();
     });
 
-    this.emit(User.EVENTS.DELETE); // TODO: use enum
+    this.emit(User.EVENTS.DELETE);
   };
+
+  block = async () => {
+    console.log("BLOCKED")
+    await this.database.users.put({ ...this.export(), isBlocked: true });
+    this.isBlocked = true;
+
+    console.log("EMIT")
+    this.emit(User.EVENTS.BLOCK);
+  }
 
   /**
    * TODO
@@ -73,6 +85,7 @@ class User extends EventEmitter {
       id: this.id,
       username: this.username,
       chatItem: this.chatItem,
+      isBlocked: this.isBlocked,
       ...(withPeerId ? { peerIdJSON: this.peerIdJSON } : {}),
     };
   }

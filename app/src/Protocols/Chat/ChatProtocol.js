@@ -20,14 +20,18 @@ export default class ChatProtocol extends BaseProtocol {
   handler = async ({ connection, stream }) => {
     const user = await this.database.users.get({ id: connection.remotePeer.toB58String() });
 
-    if (!user) {
+    if (!user || user.isBlocked) {
       // TODO: do we close the connection afther the message?
       await sendData(stream.sink, [CHAT_MESSAGE_STATUS.REFUSED]);
+
+      await receiveData(stream.source); // TODO: we don't care for the response?
 
       // TODO: is ok?
       await this.node.hangUp(connection.remotePeer);
     } else {
       try {
+        await sendData(stream.sink, [CHAT_MESSAGE_STATUS.OK]);
+
         const data = await receiveData(stream.source);
 
         if (data.length) {
@@ -159,32 +163,49 @@ export default class ChatProtocol extends BaseProtocol {
       // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
       const { stream } = await this.node.dialProtocol(peerId, PROTOCOLS.CHAT); // todo: works withouth info?
 
-      await sendData(stream.sink, [JSON.stringify(message)]);
+      console.log("before receive ok")
+      let isOk = await receiveData(stream.source);
+      console.log(isOk)
+      isOk = isOk.shift().toString();
 
-      const structuredMessage = {
-        ...message,
-        partnerId: user.id,
-        partnerUsername: user.username, // TODO: will show old username in chat history
-        senderId: localStorage.getItem("id"),
-        status: CHAT_MESSAGE_STATUS.SENT,
-        replyMessage,
-      };
+      console.log(isOk)
 
-      const chatItem = {
-        title: user.username,
-        subtitle: text.slice(0, this.MAX_CHAT_ITEM_SUBTITLE),
-        date: message.sentDate,
-        unread: 0, // sanity check
-      };
+      if (isOk === CHAT_MESSAGE_STATUS.OK) {
+        await sendData(stream.sink, [JSON.stringify(message)]);
 
-      await this.database.transaction("rw", this.database.users, this.database.conversations, async () => {
-        await this.database.conversations.add(structuredMessage);
-        await this.database.users.put({ ...user.export(), chatItem });
-      });
+        const structuredMessage = {
+          ...message,
+          partnerId: user.id,
+          partnerUsername: user.username, // TODO: will show old username in chat history
+          senderId: localStorage.getItem("id"),
+          status: CHAT_MESSAGE_STATUS.SENT,
+          replyMessage,
+        };
 
-      this.emit(CHAT_EVENTS.SENT, user, chatItem, structuredMessage);
+        const chatItem = {
+          title: user.username,
+          subtitle: text.slice(0, this.MAX_CHAT_ITEM_SUBTITLE),
+          date: message.sentDate,
+          unread: 0, // sanity check
+        };
 
-      return structuredMessage;
+        await this.database.transaction("rw", this.database.users, this.database.conversations, async () => {
+          await this.database.conversations.add(structuredMessage);
+          await this.database.users.put({ ...user.export(), chatItem });
+        });
+
+        this.emit(CHAT_EVENTS.SENT, user, chatItem, structuredMessage);
+
+        return structuredMessage;
+      }
+
+      await sendData(stream.sink, [CHAT_MESSAGE_STATUS.ACKNOWLEDGED]);
+
+      await this.database.users.put({ ...user.export(), isBlocked: true });
+
+      this.emit(CHAT_EVENTS.BLOCKED, user);
+
+      return false;
     } catch (error) {
       // TODO
       console.log(error);

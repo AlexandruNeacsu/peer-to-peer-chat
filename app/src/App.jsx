@@ -1,16 +1,49 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { BrowserRouter as Router, Redirect, Route, Switch } from "react-router-dom";
 import axios from "axios";
 import Dexie from "dexie";
 import PeerInfo from "peer-info";
 import { t } from "react-i18nify";
-import { useSnackbar } from "notistack";
+import { SnackbarProvider, useSnackbar } from "notistack";
 import CssBaseline from "@material-ui/core/CssBaseline";
+import { ThemeProvider } from "@material-ui/core/styles";
+import IconButton from "@material-ui/core/IconButton";
+import ClearIcon from "@material-ui/icons/Clear";
 import Auth from "./UI/Pages/Auth";
 import Chat from "./UI/Pages/Chat/Chat";
 import DatabaseHandler from "./Database";
 import Loader from "./UI/Components/Loader";
+import theme from "./UI/Theme";
 
+
+const Entry = () => {
+  const notistackRef = useRef();
+
+  const onClickDismiss = key => () => {
+    notistackRef.current.closeSnackbar(key);
+  };
+
+  return (
+    <ThemeProvider theme={theme}>
+
+      <SnackbarProvider
+        ref={notistackRef}
+        maxSnack={3}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        action={key => (
+          <IconButton onClick={onClickDismiss(key)}>
+            <ClearIcon />
+          </IconButton>
+        )}
+      >
+        <App />
+      </SnackbarProvider>
+    </ThemeProvider>
+  );
+};
 
 function App() {
   const { enqueueSnackbar } = useSnackbar();
@@ -125,4 +158,4 @@ function App() {
   );
 }
 
-export default App;
+export default Entry;

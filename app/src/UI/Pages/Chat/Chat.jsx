@@ -86,12 +86,33 @@ function Chat() {
         /** @type {Array<User>} */
         const users = await database.users.where("id").notEqual(userId).toArray();
 
+
+        users.forEach(user => {
+          user.on(User.EVENTS.DELETE, () => {
+            setContacts(prevContacts => prevContacts.filter(contact => contact.id !== user.id));
+            enqueueSnackbar(t("Contacts.DeletedSuccess"), { variant: "success" });
+          })
+            .on(User.EVENTS.BLOCK, () => {
+              setContacts(prevState => [
+                ...prevState.filter(contact => contact.id !== user.id),
+                user,
+              ]);
+            });
+        });
+
         /** @type {Object[]} */
         const requests = await database.requests.toArray();
 
         setContacts(users);
         setReceivedRequests(requests.filter(request => !request.sent));
         setSentRequests(requests.filter(request => request.sent));
+
+        return () => {
+          users.forEach(user => {
+            user.removeAllListeners(User.EVENTS.DELETE);
+            user.removeAllListeners(User.EVENTS.BLOCK);
+          });
+        };
       } catch (error) {
         console.log(error);
         console.log(error.message);
@@ -100,7 +121,7 @@ function Chat() {
     }
 
     getDatabaseData();
-  }, []);
+  }, [enqueueSnackbar]);
 
   /* INITIALIZE NODE */
   useEffect(() => {
@@ -155,11 +176,22 @@ function Chat() {
           .on(ADD_EVENTS.SENT, (request) => setSentRequests(prevValues => ([...prevValues, request])))
           .on(ADD_EVENTS.RECEIVED, (request) => setReceivedRequests(prevValues => ([...prevValues, request])))
           .on(ADD_EVENTS.ACCEPTED, (request) => {
-            const contact = new User(request.id, request.username, database);
+            const contact = new User({ id: request.id, username: request.username, database });
             contact.isConnected = true;
 
+            contact.on(User.EVENTS.DELETE, () => {
+              setContacts(prevContacts => prevContacts.filter(e => e.id !== user.id));
+              enqueueSnackbar(t("Contacts.DeletedSuccess"), { variant: "success" });
+            })
+              .on(User.EVENTS.BLOCK, () => {
+                setContacts(prevState => [
+                  ...prevState.filter(e => e.id !== contact.id),
+                  contact,
+                ]);
+              });
+
             setContacts(prevContacts => ([
-              ...prevContacts,
+              ...prevContacts.filter(prevContact => prevContact.id !== contact.id), // in case it's a contact who blocked us
               contact,
             ]));
 
@@ -168,15 +200,7 @@ function Chat() {
 
               enqueueSnackbar(
                 t("Requests.Accepted", { username: contact.username }),
-                {
-                  variant: "info",
-                  persist: true,
-                  action: key => (
-                    <IconButton onClick={() => closeSnackbar(key)}>
-                      <ClearIcon />
-                    </IconButton>
-                  )
-                }
+                { variant: "info", persist: true }
               );
             } else {
               setReceivedRequests(prevRequests => prevRequests.filter(req => req.id !== request.id));
@@ -196,18 +220,12 @@ function Chat() {
                 return !isFound;
               }));
 
-              enqueueSnackbar(
-                t("Requests.Rejected", { username: requestUsername }),
-                {
-                  variant: "info",
-                  persist: true,
-                  action: key => (
-                    <IconButton onClick={() => closeSnackbar(key)}>
-                      <ClearIcon />
-                    </IconButton>
-                  )
-                }
-              );
+              if (requestUsername) {
+                enqueueSnackbar(
+                  t("Requests.Rejected", { username: requestUsername }),
+                  { variant: "info", persist: true }
+                );
+              }
             } else {
               setReceivedRequests(prevRequests => prevRequests.filter(prev => prev.id !== request.id));
             }
@@ -231,8 +249,17 @@ function Chat() {
                 await notification.play();
               }
             }
-          });
+          })
+          .on(CHAT_EVENTS.BLOCKED, async ({ id, username: requestUsername }) => {
+            const contact = await updateContact(setContacts, id, { isBlocked: true });
 
+            if (contact) {
+              enqueueSnackbar(
+                t("Contacts.BlockedEvent", { username: requestUsername }),
+                { variant: "info", persist: true }
+              );
+            }
+          });
 
         node
           .getImplementation(PROTOCOLS.CALL)
@@ -350,12 +377,9 @@ function Chat() {
     };
 
     newContact.on(User.EVENTS.MESSAGE, () => setMessagesStatus(newContact));
-    newContact.on(User.EVENTS.DELETE, () => {
-      setSelectedContact(null);
-      setContacts(prevContacts => prevContacts.filter(contact => contact.id !== newContact.id));
 
-      enqueueSnackbar(t("Contacts.DeletedSuccess"), { variant: "success" });
-    });
+    newContact.deleteCallback = () => setSelectedContact(null); // TODO
+    newContact.on(User.EVENTS.DELETE, newContact.deleteCallback);
 
     if (newContact.chatItem.unread && (!selectedContact || (newContact.id !== selectedContact.id))) {
       await setMessagesStatus(newContact, "read");
@@ -365,7 +389,7 @@ function Chat() {
       if (prevContact) {
         prevContact.removeAllListeners(User.EVENTS.MESSAGE);
         prevContact.removeAllListeners(User.EVENTS.CLEAR);
-        prevContact.removeAllListeners(User.EVENTS.DELETE);
+        prevContact.removeListener(User.EVENTS.DELETE, prevContact.deleteCallback);
       }
 
       return newContact;

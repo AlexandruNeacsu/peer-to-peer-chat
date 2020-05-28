@@ -30,7 +30,9 @@
     "Add": "Adaugă contact",
     "Send": "Trimite",
     "Write": "Scrie un mesaj...",
-    "DeletedSuccess": "Contact sterş cu succes!"
+    "DeletedSuccess": "Contact sterş cu succes!",
+    "Blocked": "Utilizator blocat. Trimite din nou o cerere dacă vrei sa deblochezi.",
+    "BlockedEvent": "Blocat de către %{username}. Trimite din nou o cerere dacă vrei sa fi deblocat."
   },
   "Options": {
     "Info": "Detalii contact",

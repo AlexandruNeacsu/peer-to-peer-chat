@@ -1,12 +1,17 @@
 import React from "react";
 import Badge from "@material-ui/core/Badge";
-import { makeStyles } from "@material-ui/core/styles";
+import { makeStyles, withStyles } from "@material-ui/core/styles";
+import BlockIcon from "@material-ui/icons/Block";
+import red from "@material-ui/core/colors/red";
+import green from "@material-ui/core/colors/green";
+import Tooltip from "@material-ui/core/Tooltip";
+import { t } from "react-i18nify";
 
 
 const useStyles = makeStyles(theme => ({
   badge: {
-    backgroundColor: isOnline => (isOnline ? "#44b700" : "#b70003"),
-    color: isOnline => (isOnline ? "#44b700" : "#b70003"),
+    backgroundColor: isOnline => (isOnline ? green[500] : red[500]),
+    color: isOnline => (isOnline ? green[500] : red[500]),
     boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
     "&::after": {
       position: "absolute",
@@ -19,16 +24,42 @@ const useStyles = makeStyles(theme => ({
       content: "\"\"",
     },
   },
+  blockIcon: {
+    width: theme.spacing(3),
+    height: theme.spacing(3),
+    color: red[500],
+  }
 }));
 
 
-const StatusBadge = ({ isOnline, children, ...rest }) => {
+const StatusBadge = ({ isOnline, isBlocked, children, ...rest }) => {
   const classes = useStyles(isOnline);
 
   return (
-    <Badge classes={{ badge: classes.badge }} {...rest}>
+    <Badge
+      classes={isBlocked ? undefined : { badge: classes.badge }}
+      overlap="circle"
+      anchorOrigin={{
+        vertical: "bottom",
+        horizontal: "right",
+      }}
+      variant={isBlocked ? undefined : "dot"}
+      badgeContent={isBlocked ? <SmallBlockIcon /> : undefined}
+      {...rest}
+    >
       {children}
     </Badge>
+  );
+};
+
+
+const SmallBlockIcon = () => {
+  const classes = useStyles();
+
+  return (
+    <Tooltip title={t("Contacts.Blocked")}>
+      <BlockIcon className={classes.blockIcon} />
+    </Tooltip>
   );
 };
 
