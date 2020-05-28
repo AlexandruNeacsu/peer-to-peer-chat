@@ -32,7 +32,7 @@ const useStyles = makeStyles(theme => ({
 
 const RequestsPopover = ({ open, anchorEl, onClose, receivedRequests, sentRequests, onAccept, onReject, onDelete }) => {
   const classes = useStyles();
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(null);
   const [buttonEl, setButtonEl] = useState(null);
@@ -50,6 +50,7 @@ const RequestsPopover = ({ open, anchorEl, onClose, receivedRequests, sentReques
 
   const handleAccept = async (id, username) => {
     try {
+      onClose();
       await onAccept(id, username);
 
       enqueueSnackbar(t("Requests.AcceptSuccess"), { variant: "success" });
@@ -63,6 +64,7 @@ const RequestsPopover = ({ open, anchorEl, onClose, receivedRequests, sentReques
 
   const handleReject = async (id, username) => {
     try {
+      onClose();
       await onReject(id, username);
 
       enqueueSnackbar(t("Requests.RejectSuccess"), { variant: "success" });
@@ -76,6 +78,7 @@ const RequestsPopover = ({ open, anchorEl, onClose, receivedRequests, sentReques
 
   const handleDelete = async id => {
     try {
+      onClose();
       await onDelete(id);
 
       enqueueSnackbar(t("Requests.DeleteSuccess"), { variant: "success" });
