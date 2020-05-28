@@ -45,6 +45,12 @@
       "Refuse": "Refuză"
     }
   },
+  "Settings": {
+    "Success": "Setting changed successfully!",
+    "SignalChangeSuccess":"Signal server changed successfully!",
+    "SignalRemoveSuccess":"Signal server removed successfully!",
+    "SignalAddSuccess": "Signal server added successfully!"
+  },
   "Servers": {
     "SignalServer": "Signaling server",
     "NameServer": "Name server"

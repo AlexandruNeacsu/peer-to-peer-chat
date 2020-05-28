@@ -6,6 +6,7 @@ import { Avatar, Typography } from "@material-ui/core";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import TextField from "@material-ui/core/TextField";
 import { getLanguageOptions } from "../../../i18n/initialize-i18n";
+import { useSnackbar } from "notistack";
 
 
 const useStyles = makeStyles(theme => ({
@@ -42,6 +43,8 @@ const options = getLanguageOptions();
 
 export default function LanguagePicker() {
   const classes = useStyles();
+  const { enqueueSnackbar } = useSnackbar();
+
   const [selectedLanguage, setSelectedLanguage] = useState(JSON.parse(localStorage.getItem("language")));
 
   const handleChange = (event, language) => {
@@ -53,6 +56,8 @@ export default function LanguagePicker() {
 
       setSelectedLanguage(language);
       localStorage.setItem("language", JSON.stringify(language));
+
+      enqueueSnackbar(t("Settings.Success"), { variant: "success" });
     }
   };
 

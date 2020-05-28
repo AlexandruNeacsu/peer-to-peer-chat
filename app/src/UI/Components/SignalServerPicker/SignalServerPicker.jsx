@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { t } from "react-i18nify";
+import { useSnackbar } from "notistack";
 import { makeStyles } from "@material-ui/core/styles";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import TextField from "@material-ui/core/TextField";
@@ -78,6 +79,7 @@ const ServerInput = ({ inputProps, isLoading, ...other }) => (
 
 export default function SignalServerPicker() {
   const classes = useStyles();
+  const { enqueueSnackbar } = useSnackbar();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -122,6 +124,8 @@ export default function SignalServerPicker() {
     if (servers.length) {
       localStorage.setItem("signal-selected-servers", JSON.stringify(servers));
       setSelectedServers(servers);
+
+      enqueueSnackbar(t("Settings.SignalChangeSuccess"), { variant: "success" });
     }
   };
 
@@ -141,6 +145,8 @@ export default function SignalServerPicker() {
     setSelectedServers(selectedServers.filter(isDifferentFilter));
     setOptions(newOptions);
     localStorage.setItem("signal-servers", JSON.stringify(newOptions));
+
+    enqueueSnackbar(t("Settings.SignalRemoveSuccess"), { variant: "success" });
   };
 
   const handleSubmit = (server) => {
@@ -149,6 +155,8 @@ export default function SignalServerPicker() {
         const newOptions = [...prevState, server];
 
         localStorage.setItem("signal-servers", JSON.stringify(newOptions));
+
+        enqueueSnackbar(t("Settings.SignalAddSuccess"), { variant: "success" });
 
         return newOptions;
       });
@@ -166,6 +174,7 @@ export default function SignalServerPicker() {
           autoHighlight
           fullWidth
           multiple
+          disableClearable
           loading={isLoading}
           onChange={handleChange}
           getOptionLabel={(option) => option.label}

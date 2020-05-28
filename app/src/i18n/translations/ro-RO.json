@@ -49,6 +49,12 @@
       "Refuse": "Refuză"
     }
   },
+  "Settings": {
+    "Success": "Setare schimbată cu succes!",
+    "SignalChangeSuccess":"Server signaling modificat cu succes!",
+    "SignalRemoveSuccess":"Server signaling sters cu succes!",
+    "SignalAddSuccess": "Server signaling adăugat cu succes!"
+  },
   "Servers": {
     "SignalServer": "Server de signaling",
     "NameServer":  "Registru nume"
