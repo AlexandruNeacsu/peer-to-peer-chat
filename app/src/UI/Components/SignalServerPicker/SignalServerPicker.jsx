@@ -141,10 +141,13 @@ export default function SignalServerPicker() {
     );
 
     const newOptions = options.filter(isDifferentFilter);
+    const newSelected = selectedServers.filter(isDifferentFilter);
 
-    setSelectedServers(selectedServers.filter(isDifferentFilter));
+    setSelectedServers(newSelected);
     setOptions(newOptions);
+
     localStorage.setItem("signal-servers", JSON.stringify(newOptions));
+    localStorage.setItem("signal-selected-servers", JSON.stringify(newSelected));
 
     enqueueSnackbar(t("Settings.SignalRemoveSuccess"), { variant: "success" });
   };
