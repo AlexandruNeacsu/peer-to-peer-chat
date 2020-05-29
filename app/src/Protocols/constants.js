@@ -49,6 +49,7 @@ export const CALL_MESSAGES = {
   REFUSED: "REFUSED",
   OK: "OK",
   SIGNAL: "SIGNAL",
+  ACKNOWLEDGED: "ACKNOWLEDGED",
 };
 
 export const CALL_EVENTS = {
@@ -60,4 +61,5 @@ export const CALL_EVENTS = {
   REFUSED: "REFUSED",
   CLOSE: "CLOSE",
   TRACK: "TRACK",
+  BLOCKED: "BLOCKED",
 };

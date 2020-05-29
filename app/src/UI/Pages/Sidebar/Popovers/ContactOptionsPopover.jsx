@@ -76,12 +76,16 @@ const ContactOptionsPopover = ({ open, anchorEl, selectedContact, onClose }) => 
             </ListItemIcon>
             <ListItemText>{t("Options.Clear")}</ListItemText>
           </ListItem>
-          <ListItem button className={classes.option} onClick={handleClick("block")}>
-            <ListItemIcon>
-              <BlockIcon />
-            </ListItemIcon>
-            <ListItemText>{t("Options.Block")}</ListItemText>
-          </ListItem>
+          {
+            selectedContact && !selectedContact.isBlocked && (
+              <ListItem button className={classes.option} onClick={handleClick("block")}>
+                <ListItemIcon>
+                  <BlockIcon />
+                </ListItemIcon>
+                <ListItemText>{t("Options.Block")}</ListItemText>
+              </ListItem>
+            )
+          }
           <ListItem button className={classes.option} onClick={handleClick("delete")}>
             <ListItemIcon>
               <DeleteIcon />

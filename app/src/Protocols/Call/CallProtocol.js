@@ -53,9 +53,11 @@ export default class ChatProtocol extends BaseProtocol {
   _checkIsContact = async (stream, connection) => {
     const user = await this.database.users.get({ id: connection.remotePeer.toB58String() });
 
-    if (!user) {
+    if (!user || user.isBlocked) {
       // TODO: do we close the connection afther the message?
       await sendData(stream.sink, [CALL_MESSAGES.REFUSED]);
+
+      await receiveData(stream.source); // TODO: do we check response?
 
       // TODO: is ok?
       await this.node.hangUp(connection.remotePeer);
@@ -67,7 +69,6 @@ export default class ChatProtocol extends BaseProtocol {
   }
 
   _handleExistingCall = async (stream) => {
-
     const message = await receiveData(stream.source);
 
     const type = message.shift().toString();
@@ -107,20 +108,20 @@ export default class ChatProtocol extends BaseProtocol {
 
     this._stream = await this._buildStream(false, true);
 
+    const data = await receiveData(stream.source);
+
+    let signalData = data.shift().toString();
+    console.log(signalData);
+    signalData = JSON.parse(signalData);
+
+
     this._peer = new SimplePeer({ initiator: false, stream: this._stream, trickle: true });
     this._peer.on("signal", async responseSignal => {
       const response = JSON.stringify(responseSignal);
-      console.log([response]);
 
       const { stream: responseStream } = await this.node.dialProtocol(this._peerId, PROTOCOLS.CALL);
       await sendData(responseStream.sink, [CALL_MESSAGES.SIGNAL, response]);
     });
-
-    const data = await receiveData(stream.source);
-
-    let signalData = data.shift().toString();
-    console.log(signalData)
-    signalData = JSON.parse(signalData);
 
     this._peer.signal(signalData);
 
@@ -129,7 +130,7 @@ export default class ChatProtocol extends BaseProtocol {
       peerStream => console.log("receive stream") || this.emit(CALL_EVENTS.CALLED, user, peerStream),
     );
 
-    this._peer.on("track", (track, peerStream) => console.log("receive track") || this.emit(CALL_EVENTS.TRACK, track, peerStream))
+    this._peer.on("track", (track, peerStream) => console.log("receive track") || this.emit(CALL_EVENTS.TRACK, track, peerStream));
 
     this._peer.on("close", this.hangUp);
   }
@@ -149,6 +150,11 @@ export default class ChatProtocol extends BaseProtocol {
       const isOk = response.shift().toString();
 
       if (isOk !== CALL_MESSAGES.OK) {
+        await sendData(stream.sink, [CALL_MESSAGES.ACKNOWLEDGED]);
+
+        await user.block();
+        this.emit(CALL_EVENTS.BLOCKED, user);
+
         return;
       }
 
@@ -173,10 +179,10 @@ export default class ChatProtocol extends BaseProtocol {
 
       this._peer.on(
         "stream",
-        peerStream => console.log("call stream") || this.emit(CALL_EVENTS.CALL, user, this._stream, peerStream),
+        peerStream => this.emit(CALL_EVENTS.CALL, user, this._stream, peerStream),
       );
 
-      this._peer.on("track", (track, peerStream) => this.emit(CALL_EVENTS.TRACK, track, peerStream))
+      this._peer.on("track", (track, peerStream) => this.emit(CALL_EVENTS.TRACK, track, peerStream));
 
 
       this._peer.on("close", this.hangUp);
@@ -228,8 +234,6 @@ export default class ChatProtocol extends BaseProtocol {
   };
 
   changeVideo = async () => {
-    console.log(this._stream.getVideoTracks())
-
     if (this._peer && this._stream) {
       if (this._stream.getVideoTracks().length) {
         let isEnabled = false;
@@ -264,10 +268,8 @@ export default class ChatProtocol extends BaseProtocol {
    * @param audio
    * @returns {Promise<MediaStream>}
    */
-  _buildStream = async (video, audio) => {
-    return navigator.mediaDevices.getUserMedia({
-      video,
-      audio,
-    });
-  }
+  _buildStream = async (video, audio) => navigator.mediaDevices.getUserMedia({
+    video,
+    audio,
+  })
 }

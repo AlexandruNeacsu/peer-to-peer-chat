@@ -104,13 +104,21 @@ function Sidebar({
                 </div>
 
                 <div>
-                  <IconButton color="primary" disabled={!selectedContact.isConnected} onClick={() => onCall(false)}>
+                  <IconButton
+                    color="primary"
+                    disabled={selectedContact.isBlocked || !selectedContact.isConnected}
+                    onClick={() => onCall(false)}
+                  >
                     <CallIcon />
                   </IconButton>
                   {
                     hasCamera
                       ? (
-                        <IconButton color="primary" disabled={!selectedContact.isConnected} onClick={() => onCall(true)}>
+                        <IconButton
+                          color="primary"
+                          disabled={selectedContact.isBlocked || !selectedContact.isConnected}
+                          onClick={() => onCall(true)}
+                        >
                           <VideoCallIcon />
                         </IconButton>
                       )
@@ -153,11 +161,12 @@ function Sidebar({
 
         <ContactList
           contacts={contacts}
+          isOnline={isOnline}
           selectedContact={selectedContact}
           setSelectedContact={handleSelectContact}
           onAdd={onAddContact}
           onPopoverOpen={handlePopoverOpen("requests")}
-          requestsCount={receivedRequests.length + sentRequests.length}
+          requestsCount={receivedRequests.length}
         />
 
         <RequestsPopper

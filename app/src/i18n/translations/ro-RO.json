@@ -32,7 +32,9 @@
     "Write": "Scrie un mesaj...",
     "DeletedSuccess": "Contact sterş cu succes!",
     "Blocked": "Utilizator blocat. Trimite din nou o cerere dacă vrei sa deblochezi.",
-    "BlockedEvent": "Blocat de către %{username}. Trimite din nou o cerere dacă vrei sa fi deblocat."
+    "BlockedEvent": "Blocat de către %{username}. Trimite din nou o cerere dacă vrei sa fi deblocat.",
+    "AddTooltip": "Adaugă un contact",
+    "DisabledAddTooltip": "Nu poţi adăuga un contact atăt timp căt nu eşti conectat la reţeaua de membri"
   },
   "Options": {
     "Info": "Detalii contact",

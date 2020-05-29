@@ -28,7 +28,9 @@
     "Write": "Write a message...",
     "DeletedSuccess": "Contact deleted successfully!",
     "Blocked": "Blocked user. Resend a request if you want to unblock.",
-    "BlockedEvent": "Blocked by %{username}. Resend a request if you want to be unblocked."
+    "BlockedEvent": "Blocked by %{username}. Resend a request if you want to be unblocked.",
+    "AddTooltip": "Add a contact",
+    "DisabledAddTooltip": "Can't add a contact while not connected to the peer network"
   },
   "Options": {
     "Info": "Contact info",

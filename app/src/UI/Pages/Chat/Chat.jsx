@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import PeerId from "peer-id";
 import { t } from "react-i18nify";
 import { useSnackbar } from "notistack";
-import IconButton from "@material-ui/core/IconButton";
-import ClearIcon from "@material-ui/icons/Clear";
 import ContactPage from "../ContactPage";
 import AddContactDialog from "./AddContactDialog";
 import DatabaseHandler from "../../../Database";
@@ -61,6 +59,7 @@ function Chat() {
 
   // TODO clean this mess
   const [username, setUsername] = useState(localStorage.getItem("username"));
+  const [isLoading, setIsLoading] = useState(true);
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -106,6 +105,7 @@ function Chat() {
         setContacts(users);
         setReceivedRequests(requests.filter(request => !request.sent));
         setSentRequests(requests.filter(request => request.sent));
+        setIsLoading(false);
 
         return () => {
           users.forEach(user => {
@@ -120,8 +120,10 @@ function Chat() {
       }
     }
 
-    getDatabaseData();
-  }, [enqueueSnackbar]);
+    if (isLoading) {
+      getDatabaseData();
+    }
+  }, [call, enqueueSnackbar, isLoading, ownNode]);
 
   /* INITIALIZE NODE */
   useEffect(() => {
@@ -304,6 +306,14 @@ function Chat() {
             setIsInCall(false);
             setIsCalled(false);
             setCall(null);
+          })
+          .on(CALL_EVENTS.BLOCKED, (blockedUser) => {
+            enqueueSnackbar(
+              t("Contacts.BlockedEvent", { username: blockedUser.username }),
+              { variant: "info", persist: true }
+            );
+
+            node.getImplementation(PROTOCOLS.CALL).hangUp();
           });
 
         await node.start();
@@ -325,9 +335,9 @@ function Chat() {
   useEffect(() => {
     async function checkForCamera() {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const hasCamera = devices.some(device => device.kind === "videoinput");
+      const cameraEnabled = devices.some(device => device.kind === "videoinput");
 
-      setHasCamera(hasCamera);
+      setHasCamera(cameraEnabled);
     }
 
     checkForCamera();
