@@ -8,6 +8,7 @@ import ListItemText from "@material-ui/core/ListItemText";
 import { makeStyles } from "@material-ui/core/styles";
 import Badge from "@material-ui/core/Badge";
 import List from "@material-ui/core/List";
+import Tooltip from "@material-ui/core/Tooltip";
 import SearchIcon from "@material-ui/icons/Search";
 import IconButton from "@material-ui/core/IconButton";
 import PersonAddIcon from "@material-ui/icons/PersonAdd";
@@ -75,7 +76,15 @@ const useStyles = makeStyles(theme => ({
  * @param {function} setSelectedContact
  * @param {function} handleAdd TODO rename, we are not adding, just opening a modal
  */
-export default function ContactList({ contacts, selectedContact, setSelectedContact, onAdd, onPopoverOpen, requestsCount }) {
+export default function ContactList({
+  contacts,
+  selectedContact,
+  setSelectedContact,
+  onAdd,
+  onPopoverOpen,
+  requestsCount,
+  isOnline,
+}) {
   const classes = useStyles();
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [filter, setFilter] = useState("");
@@ -100,9 +109,14 @@ export default function ContactList({ contacts, selectedContact, setSelectedCont
         <Typography className={classes.subheaderText} variant="h3" color="textPrimary">
           {t("Contacts.ContactList")}
         </Typography>
-        <IconButton color="primary" onClick={onAdd}>
-          <PersonAddIcon />
-        </IconButton>
+        <Tooltip title={t(isOnline ? "Contacts.AddTooltip" : "Contacts.DisabledAddTooltip")}>
+          {/* Need a div for the tooltip to show when the button is disabled */}
+          <div>
+            <IconButton color="primary" onClick={onAdd} disabled={!isOnline}>
+              <PersonAddIcon />
+            </IconButton>
+          </div>
+        </Tooltip>
         <IconButton
           aria-label="receivedRequests"
           onClick={onPopoverOpen}
