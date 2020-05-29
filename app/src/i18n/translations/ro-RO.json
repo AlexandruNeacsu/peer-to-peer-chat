@@ -32,6 +32,7 @@
     "Send": "Trimite",
     "Write": "Scrie un mesaj...",
     "DeletedSuccess": "Contact sterş cu succes!",
+    "BlockedSuccess": "Contact blocat cu succes!",
     "Blocked": "Utilizator blocat. Trimite din nou o cerere dacă vrei sa deblochezi.",
     "BlockedEvent": "Blocat de către %{username}. Trimite din nou o cerere dacă vrei sa fi deblocat.",
     "AddTooltip": "Adaugă un contact",

@@ -11,7 +11,7 @@ import ClearAllIcon from "@material-ui/icons/ClearAll";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { t } from "react-i18nify";
 import BlockIcon from "@material-ui/icons/Block";
-import Tooltip from "@material-ui/core/Tooltip";
+import { useSnackbar } from "notistack";
 
 
 const useStyles = makeStyles(theme => ({
@@ -22,6 +22,7 @@ const useStyles = makeStyles(theme => ({
 
 const ContactOptionsPopover = ({ open, anchorEl, selectedContact, onClose }) => {
   const classes = useStyles();
+  const { enqueueSnackbar } = useSnackbar();
 
   const handleClick = name => async () => {
     if (!selectedContact) return;
@@ -42,6 +43,8 @@ const ContactOptionsPopover = ({ open, anchorEl, selectedContact, onClose }) => 
       }
       case "block": {
         await selectedContact.block();
+
+        enqueueSnackbar(t("Contacts.BlockedSuccess"), { variant: "success" });
         break;
       }
       default:
