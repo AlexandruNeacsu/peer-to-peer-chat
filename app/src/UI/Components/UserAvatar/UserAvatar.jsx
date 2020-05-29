@@ -21,14 +21,14 @@ const useStyles = makeStyles(theme => ({
 
 
 function UserAvatar({
-                      username,
-                      image,
-                      isOnline = false,
-                      isBlocked = false,
-                      showBadge = false,
-                      showUsername = false,
-                      className,
-                    }) {
+  username,
+  image,
+  isOnline = false,
+  isBlocked = false,
+  showBadge = false,
+  showUsername = false,
+  className,
+}) {
   const classes = useStyles();
 
   const formatedUsername = username && username.toUpperCase();

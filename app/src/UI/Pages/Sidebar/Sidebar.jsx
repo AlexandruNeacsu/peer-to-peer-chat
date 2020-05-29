@@ -152,6 +152,7 @@ function Sidebar({
                     showBadge
                     isOnline={selectedContact.isConnected}
                     image={selectedContact.avatar}
+                    isBlocked={selectedContact.isBlocked}
                   />
                 </div>
 
