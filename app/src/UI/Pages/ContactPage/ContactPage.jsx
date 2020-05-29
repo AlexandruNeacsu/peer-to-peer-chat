@@ -69,6 +69,9 @@ const useStyles = makeStyles(theme => ({
     color: theme.palette.white,
     flexGrow: 1,
   },
+  download: {
+    display: "none"
+  },
 }));
 
 const PAGE_SIZE = 50; // 50 messages
@@ -114,7 +117,6 @@ function formatMessage(message) {
           download: true,
           click: true,
           status: {
-            download: true,
             //   error: false || loading: true
           },
         },
@@ -128,13 +130,9 @@ function formatMessage(message) {
         type: "photo",
         data: {
           uri,
-          download: true,
           click: true,
           width: 300,
           height: 200,
-          status: {
-            download: true,
-          },
         },
       };
     }
@@ -180,6 +178,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
   const [dragElement, setDragElement] = useState(null);
 
   const messagesEndRef = useRef();
+  const downloadRef = useRef();
 
   /* LOAD MESSAGES AND LISTEN FOR NEW ONES */
   useEffect(() => {
@@ -380,6 +379,21 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
     return e;
   })), 1500);
 
+  const handleDownload = (file) => {
+    let objectUrl;
+
+    if (file.type === "file") {
+      const blob = new Blob([file.originalData.file.data]);
+      objectUrl = URL.createObjectURL(blob);
+    } else {
+      objectUrl = file.data.uri;
+    }
+
+    downloadRef.current.href = objectUrl;
+    downloadRef.current.download = file.originalData.file.name;
+    downloadRef.current.click();
+  };
+
   return (
     <div
       id="contact-page"
@@ -404,13 +418,11 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
               className="message-list"
               lockable
               dataSource={messageList}
-              onTitleClick={() => console.log("onTitleClick")}
-              onForwardClick={() => console.log("onForwardClick")}
               onReplyClick={setReplyMessage}
               onReplyMessageClick={handleReplyMessageClick}
               onMessageFocused={handleMessageFocused}
-              onDownload={(file) => console.log(file)}
-              onOpen={(file) => console.log(file)}
+              onDownload={handleDownload}
+              onOpen={(file) => console.log("open", file)}
             />
           </main>
         )
@@ -469,6 +481,9 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
           <SendIcon />
         </IconButton>
       </footer>
+
+      {/* eslint-disable-next-line jsx-a11y/anchor-has-content,jsx-a11y/anchor-is-valid */}
+      <a ref={downloadRef} className={classes.download} />
     </div>
   );
 }
