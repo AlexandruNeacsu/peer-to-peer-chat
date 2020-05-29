@@ -14,6 +14,7 @@ import Chat from "./UI/Pages/Chat/Chat";
 import DatabaseHandler from "./Database";
 import Loader from "./UI/Components/Loader";
 import theme from "./UI/Theme";
+import IncorrectPasswordError from "./Database/Errors/IncorrectPasswordError";
 
 
 const Entry = () => {
@@ -102,8 +103,6 @@ function App() {
       } else {
         await DatabaseHandler.initDatabase(password);
       }
-      enqueueSnackbar(t("Auth.LoginSuccess"), { variant: "success" });
-
       setIsAuthenticated(true);
       setIsLoading(false);
     } catch (error) {
@@ -116,6 +115,8 @@ function App() {
       } else if (error.request) {
         // The request was made but no response was received
         console.log(error.request);
+      } else if (error instanceof IncorrectPasswordError) {
+        enqueueSnackbar(t("Auth.Errors.WrongPassword"), { variant: "error" });
       } else {
         // TODO id not found, contact not reached, etc...
         // Something happened in setting up the request that triggered an Error

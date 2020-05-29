@@ -18,7 +18,8 @@
       "UsernameLength": "Username length must be between 5 and 50 caracters!",
       "MatchPassword": "Passwords does not match!",
       "PasswordLength": "Password needs to be at least 5 characters long",
-      "Email": "Not a valid email adress!"
+      "Email": "Not a valid email adress!",
+      "WrongPassword": "Wrong password! Try again."
     }
   },
   "Contacts": {

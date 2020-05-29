@@ -20,7 +20,8 @@
       "UsernameLength": "Numele de utilizator trebuie sa aiba intre 5 si 50 de caractere!",
       "PasswordLength": "Parola trebuie sa aibă cel putin 5 caractere",
       "MatchPassword": "Parola nu este aceeași!",
-      "Email": "Valoarea introdusă nu este o adresă validă de email!"
+      "Email": "Valoarea introdusă nu este o adresă validă de email!",
+      "WrongPassword": "Parolă greşită! Mai incearcă."
     }
   },
   "Contacts": {

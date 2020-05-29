@@ -5,6 +5,7 @@ import Message from "./Schemas/Message";
 import Encryption from "./Encryption";
 import DatabaseNotInitializedError from "./Errors/DatabaseNotInitializedError";
 import DatabaseClosedIncorrectlyError from "./Errors/DatabaseClosedIncorrectlyError";
+import IncorrectPasswordError from "./Errors/IncorrectPasswordError";
 
 const DATABASE_NAME = "chatDatabase"; // TODO change name!
 
@@ -32,21 +33,26 @@ const DatabaseHandler = {
     // TODO: is localstorage ok?, clean
 
     if (await Dexie.exists(DATABASE_NAME)) {
-      const encryptedSymmetricKeyString = localStorage.getItem("encryptedSymmetricKey");
-      const ivString = localStorage.getItem("iv");
-      const saltString = localStorage.getItem("salt");
+      try {
+        const encryptedSymmetricKeyString = localStorage.getItem("encryptedSymmetricKey");
+        const ivString = localStorage.getItem("iv");
+        const saltString = localStorage.getItem("salt");
 
-      const encryptedSymmetricKeyArray = JSON.parse(encryptedSymmetricKeyString);
-      const ivArray = JSON.parse(ivString);
-      const saltArray = JSON.parse(saltString);
+        const encryptedSymmetricKeyArray = JSON.parse(encryptedSymmetricKeyString);
+        const ivArray = JSON.parse(ivString);
+        const saltArray = JSON.parse(saltString);
 
 
-      symmetricKey = await Encryption.decryptKey(
-        new Uint8Array(encryptedSymmetricKeyArray),
-        new Uint8Array(ivArray),
-        password,
-        new Uint8Array(saltArray),
-      );
+        symmetricKey = await Encryption.decryptKey(
+          new Uint8Array(encryptedSymmetricKeyArray),
+          new Uint8Array(ivArray),
+          password,
+          new Uint8Array(saltArray),
+        );
+      } catch (error) {
+        // TODO
+        throw new IncorrectPasswordError("Password is not correct");
+      }
     } else {
       localStorage.clear();
 
