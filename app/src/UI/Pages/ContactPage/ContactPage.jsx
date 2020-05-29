@@ -72,6 +72,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const PAGE_SIZE = 50; // 50 messages
+const MAX_FILE_NAME_LENGTH = 15;
 
 function formatMessage(message) {
   const didWeSend = localStorage.getItem("id") === message.senderId;
@@ -106,7 +107,9 @@ function formatMessage(message) {
       return {
         ...common,
         type: "file",
-        text: message.file.name,
+        text: message.file.name && message.file.name.length > 15
+          ? `${message.file.name.slice(0, MAX_FILE_NAME_LENGTH)}...`
+          : "",
         data: {
           download: true,
           click: true,
