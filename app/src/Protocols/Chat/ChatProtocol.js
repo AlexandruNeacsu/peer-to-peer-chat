@@ -163,12 +163,9 @@ export default class ChatProtocol extends BaseProtocol {
       // const info = await ownNode.peerRouting.findPeer(peerId); // TODO: handle not found error
       const { stream } = await this.node.dialProtocol(peerId, PROTOCOLS.CHAT); // todo: works withouth info?
 
-      console.log("before receive ok")
       let isOk = await receiveData(stream.source);
-      console.log(isOk)
       isOk = isOk.shift().toString();
 
-      console.log(isOk)
 
       if (isOk === CHAT_MESSAGE_STATUS.OK) {
         await sendData(stream.sink, [JSON.stringify(message)]);
