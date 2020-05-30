@@ -86,14 +86,31 @@ export default function ContactList({
   isOnline,
 }) {
   const classes = useStyles();
+  const [sortedContacts, setSortedContacts] = useState(contacts);
   const [filteredContacts, setFilteredContacts] = useState([]);
   const [filter, setFilter] = useState("");
 
   useEffect(() => {
+    setSortedContacts(contacts.sort((a, b) => {
+      // newest message first
+      const formatedA = moment(a.chatItem.date);
+      const formatedB = moment(b.chatItem.date);
+
+      if (formatedA.isBefore(formatedB)) {
+        return 1;
+      }
+      if (formatedA.isAfter(formatedB)) {
+        return -1;
+      }
+      return 0;
+    }));
+  }, [contacts]);
+
+  useEffect(() => {
     if (!filter) {
-      setFilteredContacts(contacts);
+      setFilteredContacts(sortedContacts);
     }
-  }, [contacts, filter]);
+  }, [sortedContacts, filter]);
 
   const handleChange = (event) => {
     const { value } = event.target;
