@@ -19,7 +19,15 @@ class User extends EventEmitter {
    * @param peerIdJSON
    * @param isBlocked
    */
-  constructor({ id, username, database, chatItem = null, peerIdJSON = null, isBlocked = false }) {
+  constructor({
+    id,
+    username,
+    database,
+    chatItem = null,
+    peerIdJSON = null,
+    isBlocked = false,
+    avatar = null
+  }) {
     super();
     // TODO add validations
     this.id = id;
@@ -27,7 +35,7 @@ class User extends EventEmitter {
     this.database = database;
     this.isBlocked = isBlocked;
 
-    this.avatar = null;
+    this.avatar = avatar;
 
     this.peerId = PeerId.createFromB58String(id);
     this.peerIdJSON = peerIdJSON || null;
@@ -68,11 +76,9 @@ class User extends EventEmitter {
   };
 
   block = async () => {
-    console.log("BLOCKED")
     await this.database.users.put({ ...this.export(), isBlocked: true });
     this.isBlocked = true;
 
-    console.log("EMIT")
     this.emit(User.EVENTS.BLOCK);
   }
 

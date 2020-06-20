@@ -28,6 +28,7 @@ function UserAvatar({
   showBadge = false,
   showUsername = false,
   className,
+  onClick,
 }) {
   const classes = useStyles();
 
@@ -42,14 +43,24 @@ function UserAvatar({
               isOnline={isOnline}
               isBlocked={isBlocked}
             >
-              <Avatar alt={formatedUsername} src={image || AccountCircleIcon} />
+              <Avatar alt={formatedUsername} src={image || AccountCircleIcon} onClick={onClick || undefined} />
             </StatusBadge>
           )
           : <Avatar alt={formatedUsername} src={image || AccountCircleIcon} />
       }
 
       {
-        showUsername ? <Typography variant="subtitle1" className={classes.text}>{username}</Typography> : null
+        showUsername
+          ? (
+            <Typography
+              variant="subtitle1"
+              className={classes.text}
+              onClick={onClick || undefined}
+            >
+              {username}
+            </Typography>
+          )
+          : null
       }
 
     </div>

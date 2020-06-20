@@ -16,6 +16,7 @@ import ContactList from "./ContactList";
 import RequestsPopper from "./Popovers/RequestsPopover";
 import ContactOptionsPopover from "./Popovers/ContactOptionsPopover";
 import SettingsPopover from "./Popovers/SettingsPopover";
+import AvatarEditor from "../AvatarEditor";
 
 const drawerWidth = 280;
 
@@ -77,13 +78,15 @@ function Sidebar({
   handleDeleteRequest,
   onCall,
   hasCamera,
+  avatar,
+  setAvatar,
   children,
 }) {
   const classes = useStyles();
 
+  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [popOverOpen, setPopOverOpen] = useState("");
-
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // TODO: show a message or something if not connected to a peer
@@ -102,10 +105,29 @@ function Sidebar({
     setMobileOpen(prevState => !prevState);
   };
 
+  const handleAvatarEditorOpen = () => setIsEditingAvatar(true);
+
+  const handleAvatarEditorClose = (newAvatar) => {
+    setIsEditingAvatar(false);
+
+    if (newAvatar) {
+      setAvatar(newAvatar);
+    }
+  };
+
   const drawerChildren = (
     <>
       <div className={classes.userItems}>
-        <UserAvatar className={classes.userAvatar} username={username} isOnline={isOnline} showBadge showUsername />
+        <UserAvatar
+          className={classes.userAvatar}
+          username={username}
+          isOnline={isOnline}
+          image={avatar}
+          showBadge
+          showUsername
+          onClick={handleAvatarEditorOpen}
+        />
+
         <IconButton
           aria-label="settings"
           onClick={handlePopoverOpen("settings")}
@@ -246,6 +268,11 @@ function Sidebar({
         open={popOverOpen === "settings"}
         anchorEl={anchorEl}
         onClose={handlePopoverClose}
+      />
+
+      <AvatarEditor
+        isOpen={isEditingAvatar}
+        onClose={handleAvatarEditorClose}
       />
     </div>
   );

@@ -95,8 +95,16 @@ const DatabaseHandler = {
 
     _database.users.hook(
       "reading",
-      ({ id, username, chatItem, peerIdJSON, isBlocked }) => new User(
-        { id, username, database: _database, chatItem, peerIdJSON, isBlocked }
+      ({ id, username, chatItem, peerIdJSON, isBlocked, avatar }) => new User(
+        {
+          id,
+          username,
+          database: _database,
+          chatItem,
+          peerIdJSON,
+          isBlocked,
+          avatar,
+        }
       ),
     );
   },

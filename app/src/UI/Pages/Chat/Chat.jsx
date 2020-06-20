@@ -9,7 +9,7 @@ import createNode from "../../../Connection/Bundle";
 import Loader from "../../Components/Loader";
 import Sidebar from "../Sidebar";
 import PROTOCOLS, { Implementations } from "../../../Protocols";
-import { ADD_EVENTS, CALL_EVENTS, CHAT_EVENTS } from "../../../Protocols/constants";
+import { ADD_EVENTS, CALL_EVENTS, CHAT_EVENTS, UPDATE_EVENTS } from "../../../Protocols/constants";
 import User from "../../../Database/Schemas/User";
 import CallAlert from "./CallAlert";
 import VideoCall from "../VideoCall";
@@ -59,6 +59,8 @@ function Chat() {
 
   // TODO clean this mess
   const [username, setUsername] = useState(localStorage.getItem("username"));
+  const [avatar, setAvatar] = useState(localStorage.getItem("avatar"));
+
   const [isLoading, setIsLoading] = useState(true);
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
@@ -162,6 +164,11 @@ function Chat() {
           node.peerInfo.multiaddrs.add(`/p2p/${peerInfo.id.toB58String()}/p2p-circuit/p2p/${node.peerInfo.id.toB58String()}`);
 
           await updateContactConnectionStatus(peerInfo, true);
+
+          // TODO: only send updates when a change has been made
+          if (avatar) {
+            node.getImplementation(PROTOCOLS.UPDATE).update(peerInfo.id, avatar);
+          }
         });
         node.on("peer:disconnect", (peerInfo) => updateContactConnectionStatus(peerInfo, false));
         node.on("error", (err) => {
@@ -172,6 +179,7 @@ function Chat() {
         node.handleProtocol(PROTOCOLS.ADD, Implementations[PROTOCOLS.ADD], database);
         node.handleProtocol(PROTOCOLS.CHAT, Implementations[PROTOCOLS.CHAT], database);
         node.handleProtocol(PROTOCOLS.CALL, Implementations[PROTOCOLS.CALL], database);
+        node.handleProtocol(PROTOCOLS.UPDATE, Implementations[PROTOCOLS.UPDATE], database);
 
         node
           .getImplementation(PROTOCOLS.ADD)
@@ -316,6 +324,12 @@ function Chat() {
             node.getImplementation(PROTOCOLS.CALL).hangUp();
           });
 
+        node
+          .getImplementation(PROTOCOLS.UPDATE)
+          .on(UPDATE_EVENTS.UPDATED, async (contact, newAvatar) => {
+            await updateContact(setContacts, contact.id, { avatar: newAvatar });
+          });
+
         await node.start();
 
         setOwnNode(node);
@@ -329,7 +343,7 @@ function Chat() {
     if (!ownNode) {
       getOwnNode();
     }
-  }, [ownNode, contacts, selectedContact, call, enqueueSnackbar, closeSnackbar]);
+  }, [ownNode, contacts, selectedContact, call, enqueueSnackbar, closeSnackbar, avatar]);
 
   /* CHECK MEDIA DEVICES */
   useEffect(() => {
@@ -426,6 +440,14 @@ function Chat() {
     setCall({ contact: selectedContact });
   };
 
+  const handleSetAvatar = (newAvatar) => {
+    setAvatar(newAvatar);
+
+    const updateProtocol = ownNode.getImplementation(PROTOCOLS.UPDATE);
+
+    contacts.forEach(contact => contact.isConnected && updateProtocol.update(contact.peerId, newAvatar));
+  };
+
   return (
     <Loader isLoading={!ownNode}>
       {
@@ -444,6 +466,8 @@ function Chat() {
             sentRequests={sentRequests}
             onCall={handleCall}
             hasCamera={hasCamera}
+            avatar={avatar}
+            setAvatar={handleSetAvatar}
           >
 
             {

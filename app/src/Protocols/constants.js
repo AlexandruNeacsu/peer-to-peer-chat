@@ -2,6 +2,7 @@ const PROTOCOLS = {
   ADD: "/add/1.0.0",
   CHAT: "/chat/1.0.0",
   CALL: "/call/1.0.0",
+  UPDATE: "/update/1.0.0",
 };
 
 export default PROTOCOLS;
@@ -62,4 +63,8 @@ export const CALL_EVENTS = {
   CLOSE: "CLOSE",
   TRACK: "TRACK",
   BLOCKED: "BLOCKED",
+};
+
+export const UPDATE_EVENTS = {
+  UPDATED: "UPDATED",
 };
