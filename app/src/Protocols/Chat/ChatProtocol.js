@@ -129,7 +129,7 @@ export default class ChatProtocol extends BaseProtocol {
                 partnerId: user.id,
               }).count();
 
-              await this.database.users.put({ ...user, chatItem });
+              await this.database.users.put({ ...user.export(), chatItem });
             });
 
 
