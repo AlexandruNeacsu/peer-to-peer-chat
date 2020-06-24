@@ -9,13 +9,15 @@
   },
   "Auth": {
     "Authentication": "Autentificare",
-    "Login": "Login",
+    "Login": "Autentificare",
+    "SignIn": "Conectare",
     "Register": "Înregistrare",
     "Password": "Parola",
     "ConfirmPassword": "Confirmă parola",
     "Username": "Nume de utilizator",
     "Remember": "Ține-mă minte până închid browserul",
     "Forgot": "Ai uitat parola?",
+    "NoAccount": "Nu ai cont? Acest dispozitiv este deja folosit de un alt utilizator",
     "Errors": {
       "UsernameLength": "Numele de utilizator trebuie sa aiba intre 5 si 50 de caractere!",
       "PasswordLength": "Parola trebuie sa aibă cel putin 5 caractere",

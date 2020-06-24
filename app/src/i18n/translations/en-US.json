@@ -7,13 +7,14 @@
   "Navigation": {},
   "Auth": {
     "Authentication": "Authentication",
-    "Login": "Login",
+    "SignIn": "Sign in",
     "Register": "Register",
     "Password": "Password",
     "ConfirmPassword": "Confirm password",
     "Username": "Username",
     "Remember": "Remember me until I close the browser",
     "Forgot": "Forgot password?",
+    "NoAccount": "Don't have an account? This device is already used by another user",
     "Errors": {
       "UsernameLength": "Username length must be between 5 and 50 caracters!",
       "MatchPassword": "Passwords does not match!",
