@@ -27,7 +27,6 @@
     "ContactList": "Contacts",
     "Search": "Search contact",
     "Add": "Add contact",
-    "Write": "Write a message...",
     "DeletedSuccess": "Contact deleted successfully!",
     "BlockedSuccess": "Contact blocked successfully!",
     "Blocked": "Blocked user. Resend a request if you want to unblock.",
@@ -75,6 +74,11 @@
       "NotOnline": "Couldn't accept the request. The user is probably not online, try again latter!",
       "RejectError": "Rejection couldn't be sent! Request rejected only locally."
     }
+  },
+  "Chat": {
+    "Write": "Write a message...",
+    "Upload": "Drag and drop a file here or click",
+    "UploadButton": "Upload a file"
   },
   "Errors": {
     "Required": "Field is required",

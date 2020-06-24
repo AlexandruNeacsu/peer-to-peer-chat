@@ -1,18 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "react-i18nify";
 import clsx from "clsx";
+import { MessageList } from "react-chat-elements";
 import { makeStyles } from "@material-ui/core/styles";
 import { IconButton, TextField } from "@material-ui/core";
 import SendIcon from "@material-ui/icons/Send";
 import ClearIcon from "@material-ui/icons/Clear";
-import { MessageList } from "react-chat-elements";
+import AttachFileIcon from "@material-ui/icons/AttachFile";
 import DatabaseHandler from "../../../Database";
 import UploadFile from "./UploadFile";
 import User from "../../../Database/Schemas/User";
 
 import "react-chat-elements/dist/main.css";
 import "./ReactChatElementsCustomized.css";
-
 
 const useStyles = makeStyles(theme => ({
   toolbar: theme.mixins.toolbar,
@@ -179,6 +179,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
   const messagesEndRef = useRef();
   const downloadRef = useRef();
+  const mainDivRef = useRef();
 
   /* LOAD MESSAGES AND LISTEN FOR NEW ONES */
   useEffect(() => {
@@ -254,14 +255,11 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
   /* HANDLERS */
   const handleDragOver = useCallback((event) => {
     event.preventDefault();
-
-    console.log("Drag over");
   }, []);
 
   const handleDrop = useCallback((event) => {
     event.preventDefault();
 
-    console.log("drop");
     if (event.target === dragElement) {
       setDragElement(null);
     }
@@ -270,22 +268,20 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
   const handleDragEnter = useCallback((event) => {
     event.preventDefault();
 
-    if (!dragElement) {
-      console.log("Drag enter");
+    if (!dragElement && selectedContact.isConnected && !selectedContact.isBlocked) {
       setDragElement(event.currentTarget);
     }
-  }, [dragElement]);
+  }, [dragElement, selectedContact]);
 
   const handleDragLeave = useCallback((event) => {
     event.preventDefault();
 
     if (dragElement === event.target) {
-      console.log("Drag leave");
       setDragElement(null);
     }
   }, [dragElement]);
 
-  const handleFileChange = useCallback(async (f) => {
+  const handleFileChange = useCallback(async (f, append = false) => {
     try {
       let newFiles = f.map(async file => ({
         data: new Uint8Array(await file.arrayBuffer()),
@@ -295,7 +291,11 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
       newFiles = await Promise.all(newFiles);
 
-      setFiles(newFiles);
+      if (append) {
+        setFiles(prevState => [...prevState, newFiles]);
+      } else {
+        setFiles(newFiles);
+      }
     } catch (error) {
       // TODO
       console.log(error);
@@ -318,7 +318,9 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
         setDragElement(null);
         messagesEndRef.current.scrollIntoView();
-      } else if (message) {
+      }
+
+      if (message) {
         const formattedReplyMessage = { ...replyMessage };
 
         if (replyMessage && formattedReplyMessage.originalData.file) {
@@ -394,6 +396,10 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
     downloadRef.current.click();
   };
 
+  const handleUploadClick = useCallback(() => {
+    setDragElement(mainDivRef.current);
+  }, []);
+
   return (
     <div
       id="contact-page"
@@ -402,18 +408,19 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
+      ref={mainDivRef}
     >
       {/* push the content down so it's not under the navbar */}
       <div className={classes.toolbar} />
 
-      {
-        dragElement ? (
-          <UploadFile
-            handleClose={() => setDragElement(null)}
-            handleChange={handleFileChange}
-          />
-        ) : (
-          <main className={classes.chat}>
+      <main className={classes.chat}>
+        {
+          dragElement ? (
+            <UploadFile
+              handleClose={() => setDragElement(null)}
+              handleChange={handleFileChange}
+            />
+          ) : (
             <MessageList
               className="message-list"
               lockable
@@ -424,9 +431,10 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
               onDownload={handleDownload}
               onOpen={(file) => console.log("open", file)}
             />
-          </main>
-        )
-      }
+          )
+        }
+      </main>
+
 
       {/* Used to scroll to bottom */}
       <div ref={messagesEndRef} />
@@ -460,7 +468,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
         <div className={classes.input}>
           <TextField
             input={classes.input}
-            placeholder={t("Contacts.Write")}
+            placeholder={t("Chat.Write")}
             variant="outlined"
             fullWidth
             multiline
@@ -473,13 +481,23 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
         </div>
 
         <IconButton
-          aria-label={t("Contacts.Send")}
+          aria-label={t("Chat.Send")}
           color={selectedContact.isConnected && message ? "primary" : undefined}
           disabled={selectedContact.isBlocked || !selectedContact.isConnected || (!message && !files.length)}
           onClick={handleSubmit}
         >
           <SendIcon />
         </IconButton>
+
+        <IconButton
+          aria-label={t("Chat.Upload")}
+          color={!selectedContact.isBlocked && selectedContact.isConnected ? "primary" : undefined}
+          disabled={selectedContact.isBlocked || !selectedContact.isConnected}
+          onClick={handleUploadClick}
+        >
+          <AttachFileIcon />
+        </IconButton>
+
       </footer>
 
       {/* eslint-disable-next-line jsx-a11y/anchor-has-content,jsx-a11y/anchor-is-valid */}

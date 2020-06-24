@@ -31,8 +31,6 @@
     "Contacts": "Contacte",
     "Search": "Caută contact",
     "Add": "Adaugă contact",
-    "Send": "Trimite",
-    "Write": "Scrie un mesaj...",
     "DeletedSuccess": "Contact sterş cu succes!",
     "BlockedSuccess": "Contact blocat cu succes!",
     "Blocked": "Utilizator blocat. Trimite din nou o cerere dacă vrei sa deblochezi.",
@@ -86,6 +84,12 @@
       "NotOnline": "Nu s-a putut accepta cererea. Utilizatorul probabil nu este online, incearcă mai târziu!",
       "RejectError": "Refuzul nu s-a putut trimite! Cerere refuzată doar local."
     }
+  },
+  "Chat": {
+    "Write": "Scrie un mesaj...",
+    "Send": "Trimite",
+    "Upload": "Trageți și plasați un fișier aici sau faceți click",
+    "UploadButton": "Încarcă un fișier"
   },
   "Errors": {
     "Required": "Câmp necesar",
