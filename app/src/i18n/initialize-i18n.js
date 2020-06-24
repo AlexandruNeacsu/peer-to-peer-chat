@@ -34,5 +34,6 @@ export default function initializeI18n() {
   } else {
     // moment uses the last loaded locale
     moment.locale("en");
+    localStorage.setItem("language", JSON.stringify(getLanguageOptions()[1]));
   }
 }
