@@ -32,7 +32,7 @@ export default function initializeI18n() {
     setLocale(locale);
     moment.locale(locale);
   } else {
-    setLocale("ro");
     // moment uses the last loaded locale
+    moment.locale("en");
   }
 }
