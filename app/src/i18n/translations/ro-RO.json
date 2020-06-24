@@ -89,7 +89,8 @@
     "Write": "Scrie un mesaj...",
     "Send": "Trimite",
     "Upload": "Trageți și plasați un fișier aici sau faceți click",
-    "UploadButton": "Încarcă un fișier"
+    "UploadButton": "Încarcă un fișier",
+    "UnnamedFile": "Fișier"
   },
   "Errors": {
     "Required": "Câmp necesar",

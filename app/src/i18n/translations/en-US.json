@@ -78,7 +78,8 @@
   "Chat": {
     "Write": "Write a message...",
     "Upload": "Drag and drop a file here or click",
-    "UploadButton": "Upload a file"
+    "UploadButton": "Upload a file",
+    "UnnamedFile": "File"
   },
   "Errors": {
     "Required": "Field is required",

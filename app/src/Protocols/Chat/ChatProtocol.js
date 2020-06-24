@@ -4,6 +4,7 @@ import DatabaseHandler from "../../Database";
 import { receiveData, sendData } from "../../Connection";
 import PROTOCOLS, { CHAT_EVENTS, CHAT_MESSAGE_STATUS, CHAT_MESSAGE_TYPE } from "../constants";
 import BaseProtocol from "../BaseProtocol";
+import { t } from "react-i18nify";
 
 
 export default class ChatProtocol extends BaseProtocol {
@@ -103,7 +104,9 @@ export default class ChatProtocol extends BaseProtocol {
                     status: CHAT_MESSAGE_STATUS.RECEIVED, // TODO move to an enum
                   };
 
-                  chatItem.subtitle = "POZA TODO"; // TODO
+                  chatItem.subtitle = initialMessage.file.name
+                    ? initialMessage.file.name.slice(0, this.MAX_CHAT_ITEM_SUBTITLE)
+                    : t("Chat.UnnamedFile");
                 }
               } else {
                 this.FILE_PARTS[initialMessage.file.name] = {
@@ -273,7 +276,7 @@ export default class ChatProtocol extends BaseProtocol {
 
       const chatItem = {
         title: user.username,
-        subtitle: "FISIER TODO", // TODO
+        subtitle: file.name ? file.name.slice(0, this.MAX_CHAT_ITEM_SUBTITLE) : t("Chat.UnnamedFile"),
         date: finalMessage.sentDate,
         unread: 0, // sanity check
       };
