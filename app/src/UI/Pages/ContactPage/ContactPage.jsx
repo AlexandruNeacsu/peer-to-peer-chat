@@ -112,7 +112,7 @@ function formatMessage(message) {
         type: "file",
         text: message.file.name && message.file.name.length > 15
           ? `${message.file.name.slice(0, MAX_FILE_NAME_LENGTH)}...`
-          : "",
+          : message.file.name,
         data: {
           download: true,
           click: true,
