@@ -281,10 +281,9 @@ export default class ChatProtocol extends BaseProtocol {
         unread: 0, // sanity check
       };
 
-      const database = DatabaseHandler.getDatabase();
-      await database.transaction("rw", database.users, database.conversations, async () => {
-        await database.conversations.add(structuredMessage);
-        await database.users.put({ ...user.export(), chatItem });
+      await this.database.transaction("rw", this.database.users, this.database.conversations, async () => {
+        await this.database.conversations.add(structuredMessage);
+        await this.database.users.put({ ...user.export(), chatItem });
       });
 
       this.emit(CHAT_EVENTS.SENT, user, chatItem, structuredMessage);

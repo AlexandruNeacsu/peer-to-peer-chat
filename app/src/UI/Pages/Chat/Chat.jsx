@@ -139,7 +139,7 @@ function Chat() {
         setIsConnectedToPeer(true);
       }
 
-      await updateContact(
+      return updateContact(
         setContacts,
         contactPeerInfo.id.toB58String(),
         {
@@ -163,11 +163,18 @@ function Chat() {
           // add relay addres for different signaling servers
           node.peerInfo.multiaddrs.add(`/p2p/${peerInfo.id.toB58String()}/p2p-circuit/p2p/${node.peerInfo.id.toB58String()}`);
 
-          await updateContactConnectionStatus(peerInfo, true);
+          const contact = await updateContactConnectionStatus(peerInfo, true);
 
-          // TODO: only send updates when a change has been made
-          if (avatar) {
-            node.getImplementation(PROTOCOLS.UPDATE).update(peerInfo.id, avatar);
+          if (contact && contact.isNeedingUpdate) {
+            await node.getImplementation(PROTOCOLS.UPDATE).update(peerInfo.id, localStorage.getItem("avatar"));
+
+            await database.users.put({ ...contact.export(), isNeedingUpdate: false });
+
+            await updateContact(
+              setContacts,
+              contact.id,
+              { isNeedingUpdate: false },
+            );
           }
         });
         node.on("peer:disconnect", (peerInfo) => updateContactConnectionStatus(peerInfo, false));
@@ -214,6 +221,10 @@ function Chat() {
               );
             } else {
               setReceivedRequests(prevRequests => prevRequests.filter(req => req.id !== request.id));
+            }
+
+            if (localStorage.getItem("avatar")) {
+              node.getImplementation(PROTOCOLS.UPDATE).update(user.id, localStorage.getItem("avatar"));
             }
           })
           .on(ADD_EVENTS.REJECTED, (request) => {
@@ -274,25 +285,28 @@ function Chat() {
         node
           .getImplementation(PROTOCOLS.CALL)
           .on(CALL_EVENTS.CALLED, async (caller, peerStream) => {
-            await ring.play();
+            if (ring.paused) {
+              await ring.play();
+            }
 
             setCall({
               contact: caller,
               peerStream,
-              isReceivingVideo: peerStream.getVideoTracks().length,
+              isReceivingVideo: peerStream && peerStream.getVideoTracks().length,
             });
             setIsCalled(true);
           })
           .on(CALL_EVENTS.CALL, async (contact, ownStream, peerStream) => {
-            await ring.play();
-
+            if (ring.paused) {
+              await ring.play();
+            }
 
             setCall({
               contact,
               ownStream,
               peerStream,
-              isReceivingVideo: peerStream.getVideoTracks().length,
-              isShowingVideo: ownStream.getVideoTracks().length,
+              isReceivingVideo: peerStream && peerStream.getVideoTracks().length,
+              isShowingVideo: ownStream && ownStream.getVideoTracks().length,
             });
           })
           .on(CALL_EVENTS.TRACK, (track, peerStream) => {
@@ -316,6 +330,8 @@ function Chat() {
             setCall(null);
           })
           .on(CALL_EVENTS.BLOCKED, (blockedUser) => {
+            ring.pause();
+
             enqueueSnackbar(
               t("Contacts.BlockedEvent", { username: blockedUser.username }),
               { variant: "info", persist: true }
@@ -343,7 +359,7 @@ function Chat() {
     if (!ownNode) {
       getOwnNode();
     }
-  }, [ownNode, contacts, selectedContact, call, enqueueSnackbar, closeSnackbar, avatar]);
+  }, [ownNode, contacts, selectedContact, call, enqueueSnackbar, closeSnackbar]);
 
   /* CHECK MEDIA DEVICES */
   useEffect(() => {
@@ -440,12 +456,38 @@ function Chat() {
     setCall({ contact: selectedContact });
   };
 
-  const handleSetAvatar = (newAvatar) => {
+  const handleSetAvatar = async (newAvatar) => {
     setAvatar(newAvatar);
 
     const updateProtocol = ownNode.getImplementation(PROTOCOLS.UPDATE);
 
     contacts.forEach(contact => contact.isConnected && updateProtocol.update(contact.peerId, newAvatar));
+
+
+    try {
+      const database = DatabaseHandler.getDatabase();
+      const userId = localStorage.getItem("id");
+
+      await database.transaction("rw", database.users, async () => {
+        let updatedContacts = await database.users.where("id").notEqual(userId).toArray();
+        updatedContacts = updatedContacts.map(contact => {
+          contact.isNeedingUpdate = true;
+
+          return contact.export();
+        });
+
+        await database.users.bulkPut(updatedContacts);
+      });
+
+      setContacts(prevState => prevState.map(contact => {
+        contact.isNeedingUpdate = true;
+
+        return contact;
+      }));
+    } catch (error) {
+      // TODO
+      console.log(error);
+    }
   };
 
   return (

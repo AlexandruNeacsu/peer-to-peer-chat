@@ -107,11 +107,11 @@ function Sidebar({
 
   const handleAvatarEditorOpen = () => setIsEditingAvatar(true);
 
-  const handleAvatarEditorClose = (newAvatar) => {
+  const handleAvatarEditorClose = async (newAvatar) => {
     setIsEditingAvatar(false);
 
     if (newAvatar) {
-      setAvatar(newAvatar);
+      await setAvatar(newAvatar);
     }
   };
 

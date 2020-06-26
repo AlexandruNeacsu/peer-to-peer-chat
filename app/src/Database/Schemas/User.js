@@ -18,6 +18,8 @@ class User extends EventEmitter {
    * @param {{date: null, unread: number, subtitle: string, title: string} | null} chatItem
    * @param peerIdJSON
    * @param isBlocked
+   * @param avatar
+   * @param isNeedingUpdate
    */
   constructor({
     id,
@@ -26,7 +28,8 @@ class User extends EventEmitter {
     chatItem = null,
     peerIdJSON = null,
     isBlocked = false,
-    avatar = null
+    avatar = null,
+    isNeedingUpdate = false,
   }) {
     super();
     // TODO add validations
@@ -34,6 +37,7 @@ class User extends EventEmitter {
     this.username = username;
     this.database = database;
     this.isBlocked = isBlocked;
+    this.isNeedingUpdate = isNeedingUpdate;
 
     this.avatar = avatar;
 
@@ -92,6 +96,8 @@ class User extends EventEmitter {
       username: this.username,
       chatItem: this.chatItem,
       isBlocked: this.isBlocked,
+      isNeedingUpdate: this.isNeedingUpdate,
+      avatar: this.avatar,
       ...(withPeerId ? { peerIdJSON: this.peerIdJSON } : {}),
     };
   }

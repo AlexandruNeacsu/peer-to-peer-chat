@@ -15,54 +15,49 @@ export default class UpdateProtocol extends BaseProtocol {
   }
 
   handler = async ({ connection, stream }) => {
-    const user = await this.database.users.get({ id: connection.remotePeer.toB58String() });
+    try {
+      const data = await receiveData(stream.source);
+      const user = await this.database.users.get({ id: connection.remotePeer.toB58String() });
 
-    if (!user || user.isBlocked) {
-      // TODO: do we close the connection afther the message?
-      await sendData(stream.sink, [CHAT_MESSAGE_STATUS.REFUSED]);
+      if (!user || user.isBlocked) {
+        // TODO: do we close the connection afther the message?
+        await sendData(stream.sink, [CHAT_MESSAGE_STATUS.REFUSED]);
 
-      await receiveData(stream.source); // TODO: we don't care for the response?
+        await receiveData(stream.source); // TODO: we don't care for the response?
 
-      // TODO: is ok?
-      await this.node.hangUp(connection.remotePeer);
-    } else {
-      try {
+        // TODO: is ok?
+        await this.node.hangUp(connection.remotePeer);
+      } else if (data.length) {
         // await sendData(stream.sink, [CHAT_MESSAGE_STATUS.OK]); TODO
 
-        const data = await receiveData(stream.source);
+        let avatar;
 
-        if (data.length) {
-          let avatar;
+        const message = data.shift().toString();
 
-          const message = data.shift().toString();
-
-          if (this.FILE_PARTS[user.username]) {
-            if (message !== "FINAL") {
-              this.FILE_PARTS[user.username].push(message);
-            } else {
-              avatar = this.FILE_PARTS[user.username].join("");
-
-              delete this.FILE_PARTS[user.username];
-            }
+        if (this.FILE_PARTS[user.username]) {
+          if (message !== "FINAL") {
+            this.FILE_PARTS[user.username].push(message);
           } else {
-            this.FILE_PARTS[user.username] = [message];
-          }
+            avatar = this.FILE_PARTS[user.username].join("");
 
-          if (avatar) {
-            await this.database.transaction("rw", this.database.users, async () => {
-              await this.database.users.put({ ...user.export(), avatar });
-            });
-
-            this.emit(UPDATE_EVENTS.UPDATED, user, avatar);
+            delete this.FILE_PARTS[user.username];
           }
         } else {
-          // TODO throw MessageIsNullException or something
+          this.FILE_PARTS[user.username] = [message];
         }
-      } catch (error) {
-        // TODO
-        console.log(error);
-        console.log(error.message);
+
+        if (avatar) {
+          await this.database.users.put({ ...user.export(), avatar });
+
+          this.emit(UPDATE_EVENTS.UPDATED, user, avatar);
+        }
+      } else {
+        // TODO throw MessageIsNullException or something
       }
+    } catch (error) {
+      // TODO
+      console.log(error);
+      console.log(error.message);
     }
   };
 
