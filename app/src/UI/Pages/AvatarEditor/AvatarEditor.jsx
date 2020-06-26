@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import { t } from "react-i18nify";
 import AvatarEditor from "react-avatar-editor";
@@ -17,6 +17,9 @@ const useStyles = makeStyles(theme => ({
     display: "flex",
     justifyContent: "flex-start",
     flexGrow: 1,
+  },
+  rootDiv: {
+    display: "flex"
   },
 }));
 
@@ -47,24 +50,15 @@ const Editor = ({ isOpen, onClose }) => {
     editorRef = ref;
   };
 
-  const handleSubmit = useCallback(editedAvatarCanvas => {
-    // editedAvatarCanvas.toBlob(async (blob) => {
-    //   const imageBuffer = await blob.arrayBuffer();
-    //   const stringifiedAvatar = JSON.stringify(Array.from(new Uint8Array(imageBuffer)));
-    //
-    //
-    //   console.log(stringifiedAvatar);
-    //
-    //   localStorage.setItem("avatar", stringifiedAvatar);
-    // });
-
+  const handleSubmit = useCallback(async editedAvatarCanvas => {
     const newAvatar = editedAvatarCanvas.toDataURL();
     localStorage.setItem("avatar", newAvatar);
-    onClose(newAvatar);
+
+    await onClose(newAvatar);
   }, [onClose]);
 
-  const handleClose = useCallback(() => {
-    onClose(null);
+  const handleClose = useCallback(async () => {
+    await onClose(null);
     setAvatar(originalAvatar);
   }, [onClose, originalAvatar]);
 
@@ -84,7 +78,7 @@ const Editor = ({ isOpen, onClose }) => {
           noKeyboard
         >
           {({ getRootProps, getInputProps }) => (
-            <div {...getRootProps()}>
+            <div {...getRootProps()} className={classes.rootDiv}>
               <AvatarEditor
                 ref={setEditorRef}
                 image={avatar}
@@ -95,6 +89,12 @@ const Editor = ({ isOpen, onClose }) => {
                 // scale={1.2} TODO
                 rotate={0}
                 borderRadius={50}
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  maxWidth: "100vh",
+                  margin: "auto"
+                }}
               />
               <input {...getInputProps()} />
             </div>
