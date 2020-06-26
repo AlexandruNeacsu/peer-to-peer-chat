@@ -106,7 +106,13 @@ export default class ChatProtocol extends BaseProtocol {
   _handleNewCall = async (stream, user) => {
     await sendData(stream.sink, [CALL_MESSAGES.OK]);
 
-    this._stream = await this._buildStream(false, true);
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const hasMicrophone = devices.some(device => device.kind === "audioinput");
+    console.log(hasMicrophone)
+
+    if (hasMicrophone) {
+      this._stream = await this._buildStream(false, true);
+    }
 
     const data = await receiveData(stream.source);
 
@@ -125,6 +131,8 @@ export default class ChatProtocol extends BaseProtocol {
 
     this._peer.signal(signalData);
 
+    this._peer.on("connect", () => this.emit(CALL_EVENTS.CALLED, user));
+
     this._peer.on(
       "stream",
       peerStream => console.log("receive stream") || this.emit(CALL_EVENTS.CALLED, user, peerStream),
@@ -142,7 +150,13 @@ export default class ChatProtocol extends BaseProtocol {
     }
 
     try {
-      this._stream = await this._buildStream(video, true);
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasMicrophone = devices.some(device => device.kind === "audioinput");
+
+      console.log(hasMicrophone)
+      if (hasMicrophone) {
+        this._stream = await this._buildStream(video, true);
+      }
 
       const { stream } = await this.node.dialProtocol(user.peerId, PROTOCOLS.CALL);
 
@@ -235,6 +249,7 @@ export default class ChatProtocol extends BaseProtocol {
 
   changeVideo = async () => {
     if (this._peer && this._stream) {
+      // TODO: might not enable video if user doesn't have mic
       if (this._stream.getVideoTracks().length) {
         let isEnabled = false;
 
