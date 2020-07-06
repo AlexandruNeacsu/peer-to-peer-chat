@@ -7,6 +7,11 @@
   "Navigation": {
     "Logout": "Logout"
   },
+  "Buttons": {
+    "Accept": "Acceptă",
+    "Refuse": "Refuză",
+    "Send": "Trimite"
+  },
   "Auth": {
     "Authentication": "Autentificare",
     "Login": "Autentificare",
@@ -50,7 +55,8 @@
     },
     "Buttons": {
       "Accept": "Acceptă",
-      "Refuse": "Refuză"
+      "Refuse": "Refuză",
+      "Send": "Trimite"
     }
   },
   "Settings": {
@@ -91,6 +97,15 @@
     "Upload": "Trageți și plasați un fișier aici sau faceți click",
     "UploadButton": "Încarcă un fișier",
     "UnnamedFile": "Fișier"
+  },
+  "AddContact": {
+    "Title": "Adaugă contact",
+    "Username": "Numele utilizatorului",
+    "Message": "Trimite cerere de adăugare catre utilizatorul",
+    "ErrorServer": "Nu s-a putut contacta serverul de nume! Încearcă mai târziu.",
+    "UnknownError": "Nu s-a putut trimite cererea!",
+    "NotFound": "Nu există un contact cu numele introdus!",
+    "AddSuccess": "Cerere trimisă cu succes!"
   },
   "Errors": {
     "Required": "Câmp necesar",

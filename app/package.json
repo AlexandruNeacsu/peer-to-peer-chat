@@ -35,7 +35,6 @@
     "react": "^16.13.1",
     "react-avatar-editor": "^11.0.9",
     "react-chat-elements": "^10.9.2",
-    "react-chat-elements-alex": "file:../react-chat-elements",
     "react-dom": "^16.13.1",
     "react-draggable": "^4.4.2",
     "react-dropzone": "^11.0.1",
@@ -47,7 +46,7 @@
     "yup": "^0.28.5"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "HTTPS=true react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

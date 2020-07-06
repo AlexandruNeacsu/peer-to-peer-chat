@@ -4,6 +4,9 @@
     "Romanian": "Română",
     "English": "English"
   },
+  "Buttons": {
+
+  },
   "Navigation": {},
   "Auth": {
     "Authentication": "Authentication",
@@ -45,8 +48,6 @@
       "Called": "Call from %{username}"
     },
     "Buttons": {
-      "Accept": "Acceptă",
-      "Refuse": "Refuză"
     }
   },
   "Settings": {
@@ -80,6 +81,15 @@
     "Upload": "Drag and drop a file here or click",
     "UploadButton": "Upload a file",
     "UnnamedFile": "File"
+  },
+  "AddContact": {
+    "Title": "Add a contact",
+    "Username": "Contact username",
+    "Message": "Send a contact request to the username",
+    "ErrorServer": "Couldn't contact the name server! Pleasy try again later",
+    "UnknownError": "Couldn't sent the request!",
+    "NotFound": "Couldn't find a contact with that username!",
+    "AddSuccess": "Request sent successfully!"
   },
   "Errors": {
     "Required": "Field is required",
