@@ -37,6 +37,11 @@ const useStyles = makeStyles(theme => ({
     height: "100vh",
     zIndex: theme.zIndex.appBar + 1,
   },
+  resizableContent: {
+    display: "flex",
+    flexGrow: 1,
+    flexDirection: "column",
+  },
   header: {
     display: "flex",
     justifyContent: "space-between",
@@ -47,6 +52,9 @@ const useStyles = makeStyles(theme => ({
     left: "50%",
     bottom: "0",
     transform: "translate(-50%, -50%)",
+  },
+  control: {
+    cursor: "pointer",
   },
   controlLeftMargin: {
     marginRight: theme.spacing(2),
@@ -59,6 +67,7 @@ const useStyles = makeStyles(theme => ({
   },
   video: {
     maxWidth: "100%",
+    maxHeight: "80%",
     height: "auto",
     flexGrow: 1,
   },
@@ -156,13 +165,11 @@ const VideoCall = ({ stream, contact, loading: isLoading, isReceivingVideo, isSh
           minConstraints={[300, 300]}
           handle={<ExpandMoreIcon className={classes.handle} />}
           resizeHandles={["se"]}
+          lockAspectRatio
         >
           <div
-            style={
-              expanded
-                ? { display: "flex", flexGrow: 1, flexDirection: "column" }
-                : { width: `${size.width}px`, height: `${size.height}px` }
-            }
+            className={classes.resizableContent}
+            style={expanded ? undefined : { width: `${size.width}px`, height: `${size.height}px` }}
           >
 
             <div className={classes.header}>
@@ -175,7 +182,7 @@ const VideoCall = ({ stream, contact, loading: isLoading, isReceivingVideo, isSh
 
               <div className={expanded && !isReceivingVideo ? classes.box : undefined} />
 
-              <IconButton onClick={handleExpand}>
+              <IconButton onClick={handleExpand} onTouchStart={handleExpand}>
                 {expanded ? <TabUnselectedIcon /> : <AspectRatioIcon />}
               </IconButton>
             </div>
@@ -197,8 +204,9 @@ const VideoCall = ({ stream, contact, loading: isLoading, isReceivingVideo, isSh
                 hasCamera
                   ? (
                     <Fab
-                      className={showVideo ? classes.green : classes.red}
+                      className={clsx(classes.control, showVideo ? classes.green : classes.red, classes.controlLeftMargin)}
                       onClick={handleVideoChange}
+                      onTouchStart={handleVideoChange}
                       disabled={isLoading}
                     >
                       {showVideo ? <VideocamIcon /> : <VideocamOffIcon />}
@@ -209,6 +217,7 @@ const VideoCall = ({ stream, contact, loading: isLoading, isReceivingVideo, isSh
 
               <Fab
                 className={clsx({
+                  [classes.control]: true,
                   [classes.controlLeftMargin]: true,
                   [classes.red]: !hasSound,
                   [classes.green]: hasSound
@@ -216,12 +225,17 @@ const VideoCall = ({ stream, contact, loading: isLoading, isReceivingVideo, isSh
                 color="secondary"
                 aria-label="add"
                 onClick={handleMicrophoneChange}
+                onTouchStart={handleMicrophoneChange}
                 disabled={isLoading}
               >
                 {hasSound ? <MicIcon /> : <MicOffIcon />}
               </Fab>
 
-              <Fab className={clsx(classes.controlLeftMargin, classes.red)} onClick={onEnd}>
+              <Fab
+                className={clsx(classes.control, classes.controlLeftMargin, classes.red)}
+                onClick={onEnd}
+                onTouchStart={onEnd}
+              >
                 <CallEndIcon />
               </Fab>
             </div>

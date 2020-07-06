@@ -289,7 +289,7 @@ function Chat() {
               await ring.play();
             }
 
-            setCall({
+            setCall(prevValue => prevValue || {
               contact: caller,
               peerStream,
               isReceivingVideo: peerStream && peerStream.getVideoTracks().length,
@@ -310,13 +310,11 @@ function Chat() {
             });
           })
           .on(CALL_EVENTS.TRACK, (track, peerStream) => {
-            if (call) {
-              setCall(prevValue => ({
-                ...prevValue,
-                peerStream,
-                isReceivingVideo: peerStream.getVideoTracks().length,
-              }));
-            }
+            setCall(prevValue => prevValue && {
+              ...prevValue,
+              peerStream,
+              isReceivingVideo: peerStream && peerStream.getVideoTracks().length,
+            });
           })
           .on(CALL_EVENTS.ACCEPTED, () => {
             ring.pause();
@@ -524,6 +522,7 @@ function Chat() {
                   onEnd={ownNode.getImplementation(PROTOCOLS.CALL).hangUp}
                   onVideoChange={ownNode.getImplementation(PROTOCOLS.CALL).changeVideo}
                   onMicrophoneChange={ownNode.getImplementation(PROTOCOLS.CALL).changeMicrophone}
+                  hasCamera={hasCamera}
                 />
               ) : null
             }

@@ -108,7 +108,6 @@ export default class ChatProtocol extends BaseProtocol {
 
     const devices = await navigator.mediaDevices.enumerateDevices();
     const hasMicrophone = devices.some(device => device.kind === "audioinput");
-    console.log(hasMicrophone)
 
     if (hasMicrophone) {
       this._stream = await this._buildStream(false, true);
@@ -135,10 +134,10 @@ export default class ChatProtocol extends BaseProtocol {
 
     this._peer.on(
       "stream",
-      peerStream => console.log("receive stream") || this.emit(CALL_EVENTS.CALLED, user, peerStream),
+      peerStream => this.emit(CALL_EVENTS.CALLED, user, peerStream),
     );
 
-    this._peer.on("track", (track, peerStream) => console.log("receive track") || this.emit(CALL_EVENTS.TRACK, track, peerStream));
+    this._peer.on("track", (track, peerStream) => this.emit(CALL_EVENTS.TRACK, track, peerStream));
 
     this._peer.on("close", this.hangUp);
   }
@@ -153,7 +152,6 @@ export default class ChatProtocol extends BaseProtocol {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const hasMicrophone = devices.some(device => device.kind === "audioinput");
 
-      console.log(hasMicrophone)
       if (hasMicrophone) {
         this._stream = await this._buildStream(video, true);
       }
