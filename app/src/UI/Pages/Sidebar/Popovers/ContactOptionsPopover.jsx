@@ -6,7 +6,6 @@ import ListItemText from "@material-ui/core/ListItemText";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
-import InfoIcon from "@material-ui/icons/Info";
 import ClearAllIcon from "@material-ui/icons/ClearAll";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { t } from "react-i18nify";
@@ -14,7 +13,7 @@ import BlockIcon from "@material-ui/icons/Block";
 import { useSnackbar } from "notistack";
 
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles(() => ({
   option: {
     minWidth: "200px",
   },
@@ -67,12 +66,14 @@ const ContactOptionsPopover = ({ open, anchorEl, selectedContact, onClose }) => 
     >
       <Paper elevation={4}>
         <List>
+          {/*
           <ListItem button className={classes.option} onClick={handleClick("info")}>
-            <ListItemIcon>
-              <InfoIcon />
-            </ListItemIcon>
-            <ListItemText>{t("Options.Info")}</ListItemText>
+          <ListItemIcon>
+          <InfoIcon />
+          </ListItemIcon>
+          <ListItemText>{t("Options.Info")}</ListItemText>
           </ListItem>
+        */}
           <ListItem button className={classes.option} onClick={handleClick("clear")}>
             <ListItemIcon>
               <ClearAllIcon />

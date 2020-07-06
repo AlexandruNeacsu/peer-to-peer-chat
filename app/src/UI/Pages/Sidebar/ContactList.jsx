@@ -16,8 +16,6 @@ import GroupIcon from "@material-ui/icons/Group";
 import InputBase from "@material-ui/core/InputBase";
 import UserAvatar from "../../Components/UserAvatar";
 
-import "react-chat-elements-alex/dist/main.css";
-
 const useStyles = makeStyles(theme => ({
   subheader: {
     height: theme.spacing(8),
@@ -91,7 +89,7 @@ export default function ContactList({
   const [filter, setFilter] = useState("");
 
   useEffect(() => {
-    setSortedContacts(contacts.sort((a, b) => {
+    const newSortedContacts = contacts.sort((a, b) => {
       // newest message first
       const formatedA = moment(a.chatItem.date);
       const formatedB = moment(b.chatItem.date);
@@ -103,8 +101,14 @@ export default function ContactList({
         return -1;
       }
       return 0;
-    }));
-  }, [contacts]);
+    });
+
+    if (newSortedContacts.length) {
+      setSelectedContact(newSortedContacts[0]);
+    }
+
+    setSortedContacts(newSortedContacts);
+  }, [contacts, setSelectedContact]);
 
   useEffect(() => {
     if (!filter) {
