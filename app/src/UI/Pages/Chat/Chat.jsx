@@ -488,6 +488,39 @@ function Chat() {
     }
   };
 
+  const handleAddContact = async (contactUsername) => {
+    try {
+      await ownNode.getImplementation(PROTOCOLS.ADD).add(username, contactUsername);
+
+      enqueueSnackbar(t("AddContact.AddSuccess"), { variant: "success" });
+    } catch (error) {
+      if (error.response) {
+        // TODO: handle username not found, server error from nameservice, etc
+        console.log(error.response.data);
+        console.log(error.response.status);
+        console.log(error.response.headers);
+
+        if (error.response.status === 404) {
+          enqueueSnackbar(t("AddContact.NotFound"), { variant: "info" });
+        } else {
+          enqueueSnackbar(t("AddContact.ErrorServer"), { variant: "error" });
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.log(error.request);
+
+        enqueueSnackbar(t("AddContact.ErrorServer"), { variant: "error" });
+      } else {
+        // TODO id not found, contact not reached, etc...
+        // Something happened in setting up the request that triggered an Error
+        console.log("Error", error.message);
+        console.log(error);
+
+        enqueueSnackbar(t("AddContact.UnknownError"), { variant: "error" });
+      }
+    }
+  }
+
   return (
     <Loader isLoading={!ownNode}>
       {
@@ -542,7 +575,7 @@ function Chat() {
             <AddContactDialog
               open={modalOpen}
               handleClose={() => setModalOpen(false)}
-              handleSubmit={(contactUsername) => ownNode.getImplementation(PROTOCOLS.ADD).add(username, contactUsername)}
+              handleSubmit={handleAddContact}
             />
 
             {

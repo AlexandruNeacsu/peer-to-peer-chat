@@ -39,12 +39,17 @@ export default class AddProtocol extends BaseProtocol {
 
               await sendData(stream.sink, [ADD_ENUM.ACCEPTED]);
               this.emit(ADD_EVENTS.ACCEPTED, request);
-            } else if (!alreadyRegistered) {
+
+              return;
+            }
+
+            if (!alreadyRegistered) {
               await this.database.requests.add({ ...request, sent: false });
 
-              await sendData(stream.sink, [ADD_ENUM.RECEIVED]);
               this.emit(ADD_EVENTS.RECEIVED, request);
             }
+
+            await sendData(stream.sink, [ADD_ENUM.RECEIVED]);
           });
 
           break;
@@ -63,7 +68,7 @@ export default class AddProtocol extends BaseProtocol {
 
               await sendData(stream.sink, [ADD_ENUM.OK]);
             } else {
-              // TODO: sent not registered message
+              await sendData(stream.sink, [ADD_ENUM.REJECTED]);
             }
           });
           break;
@@ -93,78 +98,61 @@ export default class AddProtocol extends BaseProtocol {
 
   add = async (ownUsername, contactUsername) => {
     // TODO redial for peers we have the id but didn't found!
-    try {
-      // get the associated peerId
-      const response = await axios.get(`http://192.168.0.2:8080/username/${contactUsername}`); // TODO: handle not found, etc
-      const { peerId: B58StringId } = response.data;
+    // get the associated peerId
+    const response = await axios.get(`https://name.ivychat.tech/username/${contactUsername}`); // TODO: handle not found, etc
+    const { peerId: B58StringId } = response.data;
 
-      const peerId = PeerId.createFromB58String(B58StringId);
-      const peerInfo = await this.node.peerRouting.findPeer(peerId); // TODO: handle not found error
-      const { stream } = await this.node.dialProtocol(peerInfo, "/add/1.0.0");
+    const peerId = PeerId.createFromB58String(B58StringId);
+    const peerInfo = await this.node.peerRouting.findPeer(peerId); // TODO: handle not found error
+    const { stream } = await this.node.dialProtocol(peerInfo, "/add/1.0.0");
 
-      /*
-      TODO: what to do if peer is not found
-      how do we handle accepting the contact request locally
-      and then send our response to the remote user when connection is available
-      */
-      let user;
-      let request;
+    /*
+    TODO: what to do if peer is not found
+    how do we handle accepting the contact request locally
+    and then send our response to the remote user when connection is available
+    */
+    let user;
+    let request;
 
-      await this.database.transaction("r", this.database.users, this.database.requests, async () => {
-        user = await this.database.users.get({ id: B58StringId });
-        request = await this.database.requests.get({ id: B58StringId });
-      });
-      
-      if (!user || user.isBlocked) {
-        if (request && !request.sent) {
-          // we received a request and we haven't accepted it
+    await this.database.transaction("r", this.database.users, this.database.requests, async () => {
+      user = await this.database.users.get({ id: B58StringId });
+      request = await this.database.requests.get({ id: B58StringId });
+    });
 
-          await sendData(stream.sink, [ADD_ENUM.ACCEPTED]);
+    if (!user || user.isBlocked) {
+      if (request && !request.sent) {
+        // we received a request and we haven't accepted it
 
-          const messages = await receiveData(stream.source);
-          const message = messages.shift().toString();
+        await sendData(stream.sink, [ADD_ENUM.ACCEPTED]);
 
-          if (message === ADD_ENUM.OK) {
-            await this._acceptRequest(request);
+        const messages = await receiveData(stream.source);
+        const message = messages.shift().toString();
 
-            this.emit(ADD_EVENTS.ACCEPTED, request);
-          } else {
-            // TODO crash, burn
-          }
+        if (message === ADD_ENUM.OK) {
+          await this._acceptRequest(request);
 
-          // TODO: snackbar that it was accepted?
-        } else if (!request) {
-          // no request sent or received
-          request = new AddRequest(B58StringId, contactUsername);
-
-          await sendData(stream.sink, [ADD_ENUM.ADD, ownUsername]);
-
-          const messages = await receiveData(stream.source); //TODO
-          const message = messages.shift().toString();
-
-          if (message === ADD_ENUM.RECEIVED) {
-            await this.database.requests.add({ ...request, sent: true }); // TODO: wouldn't contact id clash with request id?
-            this.emit(ADD_EVENTS.SENT, request);
-          } else if (message === ADD_ENUM.ACCEPTED) {
-            await this.database.users.put({ id: request.id, username: request.username });
-            this.emit(ADD_EVENTS.ACCEPTED, request);
-          }
+          this.emit(ADD_EVENTS.ACCEPTED, request);
+        } else {
+          // TODO crash, burn
         }
-      }
-    } catch (error) {
-      if (error.response) {
-        // TODO: handle username not found, server error from nameservice, etc
-        console.log(error.response.data);
-        console.log(error.response.status);
-        console.log(error.response.headers);
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.log(error.request);
+
+        // TODO: snackbar that it was accepted?
       } else {
-        // TODO id not found, contact not reached, etc...
-        // Something happened in setting up the request that triggered an Error
-        console.log("Error", error.message);
-        console.log(error);
+        // no request sent or received
+        await sendData(stream.sink, [ADD_ENUM.ADD, ownUsername]);
+
+        const messages = await receiveData(stream.source); // TODO
+        const message = messages.shift().toString();
+
+        if (message === ADD_ENUM.RECEIVED && !request) {
+          // we resented the request, don't add it again
+          request = new AddRequest(B58StringId, contactUsername);
+          await this.database.requests.add({ ...request, sent: true }); // TODO: wouldn't contact id clash with request id?
+          this.emit(ADD_EVENTS.SENT, request);
+        } else if (message === ADD_ENUM.ACCEPTED) {
+          await this.database.users.put({ id: request.id, username: request.username });
+          this.emit(ADD_EVENTS.ACCEPTED, request);
+        }
       }
     }
   };
@@ -185,7 +173,18 @@ export default class AddProtocol extends BaseProtocol {
       await this._acceptRequest(request);
 
       this.emit(ADD_EVENTS.ACCEPTED, request);
+
+      return ADD_EVENTS.ACCEPTED;
     }
+
+    if (message === ADD_ENUM.REJECTED) {
+      await this.database.requests.delete(request.id);
+
+      this.emit(ADD_EVENTS.REJECTED, request);
+      return ADD_EVENTS.REJECTED;
+    }
+
+    return null;
   };
 
   reject = async (id, username) => {
