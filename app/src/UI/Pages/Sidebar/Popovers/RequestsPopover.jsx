@@ -17,6 +17,7 @@ import ListItemIcon from "@material-ui/core/ListItemIcon";
 import { t } from "react-i18nify";
 import MoreHorizIcon from "@material-ui/icons/MoreHoriz";
 import UserAvatar from "../../../Components/UserAvatar";
+import { ADD_EVENTS } from "../../../../Protocols/constants";
 
 const useStyles = makeStyles(theme => ({
   friendAddButton: {
@@ -48,12 +49,24 @@ const RequestsPopover = ({ open, anchorEl, onClose, receivedRequests, sentReques
     setIsPopoverOpen({ id, username });
   };
 
+  const close = () => {
+    onClose();
+    setIsPopoverOpen(null);
+  };
+
   const handleAccept = async (id, username) => {
     try {
-      onClose();
-      await onAccept(id, username);
+      close();
+      const response = await onAccept(id, username);
 
-      enqueueSnackbar(t("Requests.AcceptSuccess"), { variant: "success" });
+      if (response === ADD_EVENTS.ACCEPTED) {
+        enqueueSnackbar(t("Requests.AcceptSuccess"), { variant: "success" });
+      } else if (response === ADD_EVENTS.REJECTED) {
+        enqueueSnackbar(
+          t("Requests.Rejected", { username }),
+          { variant: "info", persist: true }
+        );
+      }
     } catch (error) {
       // TODO
       console.log(error);
@@ -64,7 +77,7 @@ const RequestsPopover = ({ open, anchorEl, onClose, receivedRequests, sentReques
 
   const handleReject = async (id, username) => {
     try {
-      onClose();
+      close();
       await onReject(id, username);
 
       enqueueSnackbar(t("Requests.RejectSuccess"), { variant: "success" });
@@ -78,7 +91,7 @@ const RequestsPopover = ({ open, anchorEl, onClose, receivedRequests, sentReques
 
   const handleDelete = async id => {
     try {
-      onClose();
+      close();
       await onDelete(id);
 
       enqueueSnackbar(t("Requests.DeleteSuccess"), { variant: "success" });
