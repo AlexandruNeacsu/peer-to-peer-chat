@@ -89,6 +89,7 @@ export default function ContactList({
   const [filter, setFilter] = useState("");
 
   useEffect(() => {
+    // TODO: don't run the sort every time the selectedcontact changes?
     const newSortedContacts = contacts.sort((a, b) => {
       // newest message first
       const formatedA = moment(a.chatItem.date);
@@ -103,12 +104,12 @@ export default function ContactList({
       return 0;
     });
 
-    if (newSortedContacts.length) {
+    if (newSortedContacts.length && !selectedContact) {
       setSelectedContact(newSortedContacts[0]);
     }
 
     setSortedContacts(newSortedContacts);
-  }, [contacts, setSelectedContact]);
+  }, [contacts, selectedContact, setSelectedContact]);
 
   useEffect(() => {
     if (!filter) {
