@@ -44,7 +44,7 @@ function Register({ handleSubmit }) {
       validationSchema={Yup.object({
         username: Yup
           .string()
-          .required("Required")
+          .required(t("Errors.Required"))
           .min(5, t("Auth.Errors.UsernameLength"))
           .max(50, t("Auth.Errors.UsernameLength"))
           .test({
@@ -53,7 +53,7 @@ function Register({ handleSubmit }) {
             message: t("Auth.Errors.UsernameNotFree"),
             test: async username => {
               try {
-                const response = await axios.get(`http://localhost:8080/check/username/${username}`); // TODO: handle not found, etc
+                const response = await axios.get(`https://name.ivychat.tech/check/username/${username}`); // TODO: handle not found, etc
                 const { data } = response;
 
                 return !!data.success;
@@ -65,8 +65,8 @@ function Register({ handleSubmit }) {
               }
             },
           }),
-        password: Yup.string().required("Required").min(5, t("Auth.Errors.PasswordLength")),
-        confirmPassword: Yup.string().required("Required").min(5, t("Auth.Errors.PasswordLength")).oneOf([Yup.ref("password")], t("Auth.MatchPassword")),
+        password: Yup.string().required(t("Errors.Required")).min(5, t("Auth.Errors.PasswordLength")),
+        confirmPassword: Yup.string().required(t("Errors.Required")).min(5, t("Auth.Errors.PasswordLength")).oneOf([Yup.ref("password")], t("Auth.MatchPassword")),
       })}
       onSubmit={(user, { setSubmitting }) => {
         handleSubmit(user);

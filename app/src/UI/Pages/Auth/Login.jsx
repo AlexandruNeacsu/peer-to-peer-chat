@@ -40,7 +40,7 @@ function Login({ handleSubmit }) {
         password: "",
       }}
       validationSchema={Yup.object({
-        password: Yup.string(),
+        password: Yup.string().required(t("Errors.Required")),
       })}
       onSubmit={(user, { setSubmitting }) => {
         handleSubmit(user);
