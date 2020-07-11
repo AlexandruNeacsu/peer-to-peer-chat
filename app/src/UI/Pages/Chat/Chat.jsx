@@ -133,11 +133,10 @@ function Chat() {
      *
      * @param {PeerInfo} contactPeerInfo
      * @param {boolean} newConnectionStatus
+     * @param ownStatus
      */
-    async function updateContactConnectionStatus(contactPeerInfo, newConnectionStatus) {
-      if (newConnectionStatus) {
-        setIsConnectedToPeer(true);
-      }
+    async function updateContactConnectionStatus(contactPeerInfo, newConnectionStatus, ownStatus = true) {
+      setIsConnectedToPeer(ownStatus);
 
       return updateContact(
         setContacts,
@@ -177,7 +176,10 @@ function Chat() {
             );
           }
         });
-        node.on("peer:disconnect", (peerInfo) => updateContactConnectionStatus(peerInfo, false));
+        node.on(
+          "peer:disconnect",
+          (peerInfo) => updateContactConnectionStatus(peerInfo, false, node.connectionManager._connections.size > 0)
+        );
         node.on("error", (err) => {
           console.log(err);
           console.log(err.message);
