@@ -28,7 +28,7 @@ export default class ChatProtocol extends BaseProtocol {
       await receiveData(stream.source); // TODO: we don't care for the response?
 
       // TODO: is ok?
-      await this.node.hangUp(connection.remotePeer);
+      // await this.node.hangUp(connection.remotePeer);
     } else {
       try {
         await sendData(stream.sink, [CHAT_MESSAGE_STATUS.OK]);
@@ -205,7 +205,7 @@ export default class ChatProtocol extends BaseProtocol {
 
       this.emit(CHAT_EVENTS.BLOCKED, user);
 
-      return false;
+      return null;
     } catch (error) {
       // TODO
       console.log(error);

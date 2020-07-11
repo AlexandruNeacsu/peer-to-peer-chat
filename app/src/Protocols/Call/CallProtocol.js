@@ -30,7 +30,7 @@ export default class ChatProtocol extends BaseProtocol {
       if (this._peerId) {
         await sendData(stream.sink, [CALL_MESSAGES.REFUSED]);
 
-        await this.node.hangUp(connection.remotePeer);
+        // await this.node.hangUp(connection.remotePeer);
 
         return;
       }
@@ -60,7 +60,7 @@ export default class ChatProtocol extends BaseProtocol {
       await receiveData(stream.source); // TODO: do we check response?
 
       // TODO: is ok?
-      await this.node.hangUp(connection.remotePeer);
+      // await this.node.hangUp(connection.remotePeer);
 
       return null;
     }
