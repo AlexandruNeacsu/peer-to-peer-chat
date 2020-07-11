@@ -144,6 +144,7 @@ function formatMessage(message) {
 
 
 async function loadMessages(partnerId, limit) {
+  console.log(partnerId)
   const database = DatabaseHandler.getDatabase();
   const messages = await database.conversations
     .orderBy("id")
@@ -190,6 +191,9 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
           formatMessage(newMessage),
         ]
       ));
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView();
+      }
     };
 
     selectedContact.on(User.EVENTS.MESSAGE, handleMessages);
@@ -201,7 +205,11 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
         setMessageList(messages);
         setPage(prevPage => prevPage + 1);
 
-        messagesEndRef.current.scrollIntoView();
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView();
+        }
+
+        setIsLoadingMessages(false);
       })
       .catch((error) => {
         console.log(error);
@@ -211,7 +219,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
     return () => {
       setMessageList(prevValues => {
         prevValues.forEach(value => {
-          if (value.type === "PHOTO") {
+          if (value && value.type === "PHOTO") {
             URL.revokeObjectURL(value.data.uri);
           }
         });
@@ -221,6 +229,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
       setPage(0);
       selectedContact.removeListener("messages", handleMessages);
+      setIsLoadingMessages(true);
     };
   }, [selectedContact]);
 
@@ -332,7 +341,9 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
         const sentText = await sendText(selectedContact, message, replyMessage ? formattedReplyMessage : null);
 
-        sentMessages.push(sentText);
+        if (sentText) {
+          sentMessages.push(sentText);
+        }
       }
 
       if (sentMessages.length) {
