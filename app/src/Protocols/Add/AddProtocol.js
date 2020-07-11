@@ -119,7 +119,7 @@ export default class AddProtocol extends BaseProtocol {
       request = await this.database.requests.get({ id: B58StringId });
     });
 
-    if (!user || user.isBlocked) {
+    if (!user || (user && user.isBlocked)) {
       if (request && !request.sent) {
         // we received a request and we haven't accepted it
 
