@@ -7,12 +7,16 @@ import { IconButton, TextField } from "@material-ui/core";
 import SendIcon from "@material-ui/icons/Send";
 import ClearIcon from "@material-ui/icons/Clear";
 import AttachFileIcon from "@material-ui/icons/AttachFile";
+import useTheme from "@material-ui/core/styles/useTheme";
+import useMediaQuery from "@material-ui/core/useMediaQuery";
 import DatabaseHandler from "../../../Database";
 import UploadFile from "./UploadFile";
 import User from "../../../Database/Schemas/User";
 
 import "react-chat-elements/dist/main.css";
 import "./ReactChatElementsCustomized.css";
+import PhotoDialog from "./PhotoDialog";
+
 
 const useStyles = makeStyles(theme => ({
   toolbar: theme.mixins.toolbar,
@@ -166,6 +170,8 @@ async function loadMessages(partnerId, limit) {
  */
 export default function ContactPage({ selectedContact, sendText, sendFile }) {
   const classes = useStyles();
+  const theme = useTheme();
+  const shouldDownloadFile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [page, setPage] = useState(1);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -173,7 +179,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
   const [message, setMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
   const [files, setFiles] = useState([]);
-
+  const [selectedFile, setSelectedFile] = useState(null);
   const [replyMessage, setReplyMessage] = useState();
 
   const [dragElement, setDragElement] = useState(null);
@@ -411,6 +417,14 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
     setDragElement(mainDivRef.current);
   }, []);
 
+  const handleImage = useCallback((imgMessage) => {
+    if (shouldDownloadFile) {
+      handleDownload(imgMessage);
+    } else {
+      setSelectedFile(imgMessage && imgMessage.data ? imgMessage : null);
+    }
+  }, [shouldDownloadFile]);
+
   return (
     <div
       id="contact-page"
@@ -440,7 +454,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
               onReplyMessageClick={handleReplyMessageClick}
               onMessageFocused={handleMessageFocused}
               onDownload={handleDownload}
-              onOpen={(file) => console.log("open", file)}
+              onOpen={handleImage}
             />
           )
         }
@@ -513,6 +527,13 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
       {/* eslint-disable-next-line jsx-a11y/anchor-has-content,jsx-a11y/anchor-is-valid */}
       <a ref={downloadRef} className={classes.download} />
+
+      <PhotoDialog
+        open={!!selectedFile}
+        image={selectedFile && selectedFile.data.uri}
+        onClose={() => handleImage(null)}
+        onDownload={() => handleDownload(selectedFile)}
+      />
     </div>
   );
 }
