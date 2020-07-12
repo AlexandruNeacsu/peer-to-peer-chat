@@ -16,6 +16,7 @@ import User from "../../../Database/Schemas/User";
 import "react-chat-elements/dist/main.css";
 import "./ReactChatElementsCustomized.css";
 import PhotoDialog from "./PhotoDialog";
+import Loader from "../../Components/Loader";
 
 
 const useStyles = makeStyles(theme => ({
@@ -175,6 +176,7 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
 
   const [page, setPage] = useState(1);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const [message, setMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
@@ -319,55 +321,60 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    try {
-      const sentMessages = [];
+    if (!isSending) {
+      try {
+        const sentMessages = [];
 
-      if (files.length) {
-        // promise.all will kill client if files are too big
-        for (const file of files) {
-          // eslint-disable-next-line no-await-in-loop
-          const sentFile = await sendFile(selectedContact, file, message);
+        if (files.length) {
+          setIsSending(true);
 
-          sentMessages.push(sentFile);
+          // promise.all will kill client if files are too big
+          for (const file of files) {
+            // eslint-disable-next-line no-await-in-loop
+            const sentFile = await sendFile(selectedContact, file, message);
+
+            sentMessages.push(sentFile);
+          }
+
+          setDragElement(null);
+          messagesEndRef.current.scrollIntoView();
         }
 
-        setDragElement(null);
-        messagesEndRef.current.scrollIntoView();
-      }
+        if (message) {
+          const formattedReplyMessage = { ...replyMessage };
 
-      if (message) {
-        const formattedReplyMessage = { ...replyMessage };
+          if (replyMessage && formattedReplyMessage.originalData.file) {
+            formattedReplyMessage.text = formattedReplyMessage.originalData.file.name;
 
-        if (replyMessage && formattedReplyMessage.originalData.file) {
-          formattedReplyMessage.text = formattedReplyMessage.originalData.file.name;
+            delete formattedReplyMessage.data;
+            delete formattedReplyMessage.originalData.file;
+          }
 
-          delete formattedReplyMessage.data;
-          delete formattedReplyMessage.originalData.file;
+          const sentText = await sendText(selectedContact, message, replyMessage ? formattedReplyMessage : null);
+
+          if (sentText) {
+            sentMessages.push(sentText);
+          }
         }
 
-        const sentText = await sendText(selectedContact, message, replyMessage ? formattedReplyMessage : null);
+        if (sentMessages.length) {
+          setMessage("");
+          setReplyMessage(null);
+          setMessageList(prevMessages => [
+            ...prevMessages,
+            ...sentMessages.map(sentMessage => formatMessage(sentMessage)),
+          ]);
 
-        if (sentText) {
-          sentMessages.push(sentText);
+          messagesEndRef.current.scrollIntoView();
         }
+        setIsSending(false);
+      } catch (error) {
+        // TODO
+        console.log(error);
+        console.log(error.message);
       }
-
-      if (sentMessages.length) {
-        setMessage("");
-        setReplyMessage(null);
-        setMessageList(prevMessages => [
-          ...prevMessages,
-          ...sentMessages.map(sentMessage => formatMessage(sentMessage)),
-        ]);
-
-        messagesEndRef.current.scrollIntoView();
-      }
-    } catch (error) {
-      // TODO
-      console.log(error);
-      console.log(error.message);
     }
-  }, [files, message, sendFile, selectedContact, replyMessage, sendText]);
+  }, [isSending, files, message, sendFile, selectedContact, replyMessage, sendText]);
 
   const handleKeyDown = useCallback(async (event) => {
     if (!event.shiftKey && event.key === "Enter") {
@@ -439,25 +446,28 @@ export default function ContactPage({ selectedContact, sendText, sendFile }) {
       <div className={classes.toolbar} />
 
       <main className={classes.chat}>
-        {
-          dragElement ? (
-            <UploadFile
-              handleClose={() => setDragElement(null)}
-              handleChange={handleFileChange}
-            />
-          ) : (
-            <MessageList
-              className="message-list"
-              lockable
-              dataSource={messageList}
-              onReplyClick={setReplyMessage}
-              onReplyMessageClick={handleReplyMessageClick}
-              onMessageFocused={handleMessageFocused}
-              onDownload={handleDownload}
-              onOpen={handleImage}
-            />
-          )
-        }
+        <Loader isLoading={isSending}>
+
+          {
+            dragElement ? (
+              <UploadFile
+                handleClose={() => setDragElement(null)}
+                handleChange={handleFileChange}
+              />
+            ) : (
+              <MessageList
+                className="message-list"
+                lockable
+                dataSource={messageList}
+                onReplyClick={setReplyMessage}
+                onReplyMessageClick={handleReplyMessageClick}
+                onMessageFocused={handleMessageFocused}
+                onDownload={handleDownload}
+                onOpen={handleImage}
+              />
+            )
+          }
+        </Loader>
       </main>
 
 
