@@ -61,6 +61,9 @@ const useStyles = makeStyles(theme => ({
   userAvatar: {
     flexGrow: 1,
   },
+  wrapper: {
+    display: "flex",
+  },
 }));
 
 
@@ -178,7 +181,7 @@ function Sidebar({
                   />
                 </div>
 
-                <div>
+                <div className={classes.wrapper}>
                   <IconButton
                     color="primary"
                     disabled={selectedContact.isBlocked || !selectedContact.isConnected}
