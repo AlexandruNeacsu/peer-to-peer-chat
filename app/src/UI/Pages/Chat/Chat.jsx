@@ -418,7 +418,12 @@ function Chat() {
 
     newContact.on(User.EVENTS.MESSAGE, () => setMessagesStatus(newContact));
 
-    newContact.deleteCallback = () => setSelectedContact(null); // TODO
+    newContact.deleteCallback = () => {
+      setSelectedContact(null);
+
+      setContacts(prevContacts => prevContacts.filter(contact => contact.id !== newContact.id));
+    };
+
     newContact.on(User.EVENTS.DELETE, newContact.deleteCallback);
 
     if (newContact.chatItem.unread && (!selectedContact || (newContact.id !== selectedContact.id))) {
