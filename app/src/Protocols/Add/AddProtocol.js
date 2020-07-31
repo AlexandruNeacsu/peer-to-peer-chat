@@ -99,7 +99,8 @@ export default class AddProtocol extends BaseProtocol {
   add = async (ownUsername, contactUsername) => {
     // TODO redial for peers we have the id but didn't found!
     // get the associated peerId
-    const response = await axios.get(`https://name.ivychat.tech/username/${contactUsername}`); // TODO: handle not found, etc
+    const nameserver = JSON.parse(localStorage.getItem("name-selected-server"));
+    const response = await axios.get(`${nameserver}/username/${contactUsername}`); // TODO: handle not found, etc
     const { peerId: B58StringId } = response.data;
 
     const peerId = PeerId.createFromB58String(B58StringId);

@@ -53,7 +53,8 @@ function Register({ handleSubmit }) {
             message: t("Auth.Errors.UsernameNotFree"),
             test: async username => {
               try {
-                const response = await axios.get(`https://name.ivychat.tech/check/username/${username}`); // TODO: handle not found, etc
+                const nameserver = JSON.parse(localStorage.getItem("name-selected-server"));
+                const response = await axios.get(`${nameserver}/check/username/${username}`); // TODO: handle not found, etc
                 const { data } = response;
 
                 return !!data.success;

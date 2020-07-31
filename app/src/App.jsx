@@ -75,7 +75,7 @@ function App() {
 
         const id = userPeerInfo.id.toB58String();
 
-        const response = await axios.post("https://name.ivychat.tech/signup", {
+        const response = await axios.post("http://localhost:8181/signup", {
           username,
           peerId: id,
           password,
@@ -89,11 +89,11 @@ function App() {
           localStorage.setItem("id", id);
           localStorage.setItem("username", username); // !!!TODO
 
-          const defaultSignalingServers = [{ label: "default", value: "signal.ivychat.tech", port: 443, type: "dns4" }];
+          const defaultSignalingServers = [{ label: "default", value: "http://localhost", port: 8080, type: "dns4" }];
           localStorage.setItem("signal-servers", JSON.stringify(defaultSignalingServers));
           localStorage.setItem("signal-selected-servers", JSON.stringify(defaultSignalingServers));
 
-          const defaultNameServer = { label: "default", value: "https://name.ivychat.tech" };
+          const defaultNameServer = { label: "default", value: "http://localhost:8181" };
           localStorage.setItem("name-server", JSON.stringify(defaultNameServer));
           localStorage.setItem("name-selected-server", JSON.stringify(defaultNameServer));
 
