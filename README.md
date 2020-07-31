@@ -30,3 +30,11 @@ For each one run
 ```
 npm run start
 ```
+
+## Screenshots
+![Received contact request](/screenshots/requests_list.jpeg?raw=true)
+![Contact page](/screenshots/chat_screen.jpeg?raw=true)
+![Contact options](/screenshots/contact_options.jpeg?raw=true)
+![Call alert modal](/screenshots/call_modal.jpeg?raw=true)
+![Small draggable call window](/screenshots/draggable_call.jpeg?raw=true)
+![Fullscreen call window](/screenshots/fullscren_call.jpeg?raw=true)
