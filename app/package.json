@@ -9,7 +9,7 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "buffer": "^5.6.0",
     "cids": "^0.8.0",
     "clsx": "^1.1.0",
