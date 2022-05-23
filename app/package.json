@@ -13,7 +13,7 @@
     "buffer": "^5.6.0",
     "cids": "^0.8.0",
     "clsx": "^1.1.0",
-    "dexie": "^2.0.4",
+    "dexie": "^3.2.2",
     "dexie-encrypted": "^1.2.2",
     "formik": "^2.1.4",
     "it-keepalive": "^1.2.0",
